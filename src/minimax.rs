@@ -47,15 +47,15 @@ pub fn minimax(node: (u32, i32, String), tree:Vec<(u32, i32, String)>, maximize:
         let nodes = new_tree.iter().filter(|x| children.contains(&x.0)).collect::<Vec<&(u32, i32, String)>>();
         if maximize {
             let mut value = -9999;
-            for node in nodes {
-                value = max(value, minimax(node.clone(), tree.clone(), false))
+            for child_node in nodes {
+                value = max(value, minimax(child_node.clone(), tree.clone(), false))
             }
             return value
         }else {
             let mut value = 9999;
             
-            for node in nodes {
-                value = min(value, minimax(node.clone(), tree.clone(), true))
+            for child_node in nodes {
+                value = min(value, minimax(child_node.clone(), tree.clone(), true))
             }
             return value
         }
