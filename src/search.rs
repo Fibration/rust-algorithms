@@ -1,3 +1,5 @@
+
+// 29/09/2023
 pub fn binary_search(list:&[i32], target: i32) -> usize {
     let mut bottom : usize= 0;
     let mut top = list.len() - 1;
