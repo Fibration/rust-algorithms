@@ -19,11 +19,25 @@ mod test_minimax {
         let tree = vec![node1.clone(), node2.clone()];
         assert_eq!(minimax(node1.clone(), tree, true), -1)
     }
+
+    #[test]
+    fn test_choice(){
+        let node1 = (0, 1, String::from("1,2"));
+        let node2 = (1, -1, String::from("3,4"));
+        let node3 = (2, -1, String::from("5,6"));
+                let node2a = (3, 1, String::from(""));
+        let node2b = (4, 2, String::from(""));
+                let node3a = (5, 3, String::from(""));
+        let node3b = (6, 4, String::from(""));
+        let tree = vec![node1.clone(), node2.clone(), node3.clone(), node2a.clone(), node2b.clone(), node3a.clone(), node3b.clone()];
+        assert_eq!(minimax(node1.clone(), tree, true), 3)
+
+    }
 }
 
 pub fn minimax(node: (u32, i32, String), tree:Vec<(u32, i32, String)>, maximize: bool) -> i32 {
     let node_id = node.0;
-    print!("{node_id}, {maximize}");
+    print!("{node_id}, {maximize};");
     if node.2.len() == 0 {
         return node.1
     } else {
