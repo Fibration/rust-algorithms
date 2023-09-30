@@ -35,6 +35,7 @@ mod test_minimax {
     }
 }
 
+// 30/09/2023
 pub fn minimax(node: (u32, i32, String), tree:Vec<(u32, i32, String)>, maximize: bool) -> i32 {
     let node_id = node.0;
     print!("{node_id}, {maximize};");
