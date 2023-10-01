@@ -38,7 +38,8 @@ mod test_minimax {
             node3a.clone(),
             node3b.clone(),
         ];
-        assert_eq!(minimax(node1.clone(), tree, true), 3)
+        assert_eq!(minimax(node1.clone(), tree.clone(), true), 3);
+        assert_eq!(negamax(node1.clone(), tree.clone()), 3);
     }
 }
 
@@ -74,5 +75,38 @@ pub fn minimax(node: (u32, i32, String), tree: Vec<(u32, i32, String)>, maximize
             }
             return value;
         }
+    }
+}
+
+fn get_nodes_by_id(node_ids: Vec<u32>, tree: &Vec<(u32, i32, String)>) -> Vec<&(u32, i32, String)> {
+    let nodes = tree
+        .iter()
+        .filter(|x| node_ids.contains(&x.0))
+        .collect::<Vec<&(u32, i32, String)>>();
+    nodes
+}
+
+fn string_to_idx(string: String) -> Vec<u32> {
+    string
+        .split(",")
+        .into_iter()
+        .map(|x| x.parse().unwrap())
+        .collect()
+}
+
+// 01/09/2023
+fn negamax(node: (u32, i32, String), tree: Vec<(u32, i32, String)>) -> i32 {
+    if node.2.len() == 0 {
+        return node.1;
+    } else {
+        let node_ids = string_to_idx(node.2);
+        let new_tree = tree.clone();
+        let nodes = get_nodes_by_id(node_ids, &new_tree);
+
+        let mut value = -9999;
+        for child_node in nodes {
+            value = max(value, -negamax(child_node.clone(), tree.clone()))
+        }
+        return value;
     }
 }
