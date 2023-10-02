@@ -47,7 +47,7 @@ mod test_minimax {
 // 30/09/2023
 pub fn minimax(node: (u32, i32, String), tree: Vec<(u32, i32, String)>, maximize: bool) -> i32 {
     let node_id = node.0;
-    print!("{node_id}, {maximize};");
+    print!("{node_id}, {maximize};\n");
     if node.2.len() == 0 {
         return node.1;
     } else {
@@ -130,8 +130,8 @@ fn negamax_alphabeta(
                 value,
                 -negamax_alphabeta(child_node, tree, -beta, -a, depth - 1),
             );
+            print!("value:{value},alpha:{a},beta:{beta},depth:{depth};\n");
             a = max(a, value);
-            print!("{a}");
             if a >= beta {
                 break;
             }
