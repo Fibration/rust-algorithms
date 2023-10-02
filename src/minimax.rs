@@ -22,9 +22,9 @@ mod test_minimax {
 
     #[test]
     fn test_choice() {
-        let node1 = (0, 1, String::from("1,2"));
-        let node2 = (1, -1, String::from("3,4"));
-        let node3 = (2, -1, String::from("5,6"));
+        let node1 = (0, 0, String::from("1,2"));
+        let node2 = (1, 1, String::from("3,4"));
+        let node3 = (2, 1, String::from("5,6"));
         let node2a = (3, 1, String::from(""));
         let node2b = (4, 2, String::from(""));
         let node3a = (5, 3, String::from(""));
@@ -40,6 +40,7 @@ mod test_minimax {
         ];
         assert_eq!(minimax(node1.clone(), tree.clone(), true), 3);
         assert_eq!(negamax(node1.clone(), tree.clone()), 3);
+        assert_eq!(negamax_alphabeta(&node1, &tree, 0, 100, 5), 3);
     }
 }
 
@@ -106,6 +107,34 @@ fn negamax(node: (u32, i32, String), tree: Vec<(u32, i32, String)>) -> i32 {
         let mut value = -9999;
         for child_node in nodes {
             value = max(value, -negamax(child_node.clone(), tree.clone()))
+        }
+        return value;
+    }
+}
+
+// 02/09/2023
+fn negamax_alphabeta(
+    node: &(u32, i32, String),
+    tree: &Vec<(u32, i32, String)>,
+    alpha: i32,
+    beta: i32,
+    depth: u32,
+) -> i32 {
+    let mut a = alpha;
+    if depth == 0 || node.2.len() == 0 {
+        return node.1;
+    } else {
+        let mut value = -9999;
+        for child_node in get_nodes_by_id(string_to_idx(node.2.clone()), tree) {
+            value = max(
+                value,
+                -negamax_alphabeta(child_node, tree, -beta, -a, depth - 1),
+            );
+            a = max(a, value);
+            print!("{a}");
+            if a >= beta {
+                break;
+            }
         }
         return value;
     }
