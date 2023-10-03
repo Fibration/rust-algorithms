@@ -41,6 +41,8 @@ mod test_minimax {
         assert_eq!(minimax(node1.clone(), tree.clone(), true), 3);
         assert_eq!(negamax(node1.clone(), tree.clone()), 3);
         assert_eq!(negamax_alphabeta(&node1, &tree, 0, 100, 5), 3);
+        print!("MTD\n");
+        assert_eq!(mtd(&node1, &tree, 0, 5), 3);
     }
 }
 
@@ -118,7 +120,7 @@ fn negamax_alphabeta(
     tree: &Vec<(u32, i32, String)>,
     alpha: i32,
     beta: i32,
-    depth: u32,
+    depth: u8,
 ) -> i32 {
     let mut a = alpha;
     if depth == 0 || node.2.len() == 0 {
@@ -138,4 +140,23 @@ fn negamax_alphabeta(
         }
         return value;
     }
+}
+
+// 03/09/2023
+// typically, you'd memoize the result but this mock tree is basically a memoize result anyway oops
+fn mtd(node: &(u32, i32, String), tree: &Vec<(u32, i32, String)>, guess: i32, depth: u8) -> i32 {
+    let mut g = guess;
+    let mut upper = 9999;
+    let mut lower = -9999;
+
+    while lower < upper {
+        let beta = max(g, lower + 1);
+        g = negamax_alphabeta(node, tree, beta - 1, beta, depth);
+        if g < beta {
+            upper = g;
+        } else {
+            lower = g;
+        }
+    }
+    g
 }
