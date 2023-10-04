@@ -80,6 +80,7 @@ fn depth_first_search(
     current_node: &str,
     tree: &HashMap<&str, Vec<&str>>,
 ) -> bool {
+    print!("current node {current_node};\n");
     let children = tree.get(current_node).unwrap();
     if current_node == target_node {
         return true;
@@ -88,6 +89,7 @@ fn depth_first_search(
         for child in children {
             if depth_first_search(target_node, child, tree) {
                 found = true;
+                break;
             }
         }
         return found;
