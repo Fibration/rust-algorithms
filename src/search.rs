@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 // 29/09/2023
 pub fn binary_search(list: &[i32], target: i32) -> usize {
@@ -70,7 +70,8 @@ mod test_graph_search {
             ("204", vec![]),
         ]);
 
-        assert_eq!(depth_first_search("201", "root", &tree), true)
+        assert_eq!(depth_first_search("201", "root", &tree), true);
+        assert_eq!(breadth_first_search("201", &tree), true);
     }
 }
 
@@ -94,4 +95,19 @@ fn depth_first_search(
         }
         return found;
     }
+}
+
+fn breadth_first_search(target_node: &str, tree: &HashMap<&str, Vec<&str>>) -> bool {
+    print!("current node is root;\n");
+    let mut search_queue = VecDeque::from(tree["root"].clone());
+    while let Some(current_node) = search_queue.pop_front() {
+        print!("current node {current_node};\n");
+        if current_node == target_node {
+            return true;
+        }
+        for child in tree[current_node].clone() {
+            search_queue.push_back(child);
+        }
+    }
+    return false;
 }
