@@ -71,7 +71,9 @@ mod test_graph_search {
         ]);
 
         assert_eq!(depth_first_search("201", "root", &tree), true);
+        assert_eq!(depth_first_search("205", "root", &tree), false);
         assert_eq!(breadth_first_search("201", &tree), true);
+        assert_eq!(breadth_first_search("205", &tree), false);
     }
 }
 
