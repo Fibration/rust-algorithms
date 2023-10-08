@@ -9,8 +9,12 @@ fn test_svm() {
         vec![(1.0, 1.0), (5.0, 1.0)],
         vec![(5.0, 1.0), (1.0, 1.0)],
     );
-    let model = train_svm(points.clone(), labels);
-    assert_eq!(svm_predict(model.0, model.1, points[0].clone()), -1.0);
+    let model = train_svm(&points, &labels);
+    assert_eq!(svm_predict(&model.0, model.1, &points[0]), -1.0);
+    assert_eq!(
+        svm_predict(&model.0, model.1, &points[points.len() - 1]),
+        1.0
+    );
 }
 
 fn sample(
@@ -22,7 +26,7 @@ fn sample(
     let mut data: Vec<Vec<f64>> = Vec::new();
     let mut labels: Vec<f64> = Vec::new();
     let mut rng = thread_rng();
-    for i in 0..size1 {
+    for _ in 0..size1 {
         data.push(
             params1
                 .iter()
@@ -31,7 +35,7 @@ fn sample(
         );
         labels.push(-1.0);
     }
-    for i in 0..size2 {
+    for _ in 0..size2 {
         data.push(
             params2
                 .iter()
@@ -43,7 +47,7 @@ fn sample(
     return (data, labels);
 }
 
-fn train_svm(data: Vec<Vec<f64>>, labels: Vec<f64>) -> (Vec<f64>, f64) {
+fn train_svm(data: &Vec<Vec<f64>>, labels: &Vec<f64>) -> (Vec<f64>, f64) {
     let learning_rate = 0.01;
     let mut rng = thread_rng();
     let normal = Normal::new(0.0, 1.0).unwrap();
@@ -53,7 +57,7 @@ fn train_svm(data: Vec<Vec<f64>>, labels: Vec<f64>) -> (Vec<f64>, f64) {
     for _i in 0..data[0].len() as u32 {
         w.push(normal.sample(&mut rng));
     }
-    for _ in 0..(data.len() / 16) {
+    for _ in 0..200 {
         let mut sample_batch: Vec<usize> = Vec::new();
         for _j in 0..16 {
             sample_batch.push(uniform.sample(&mut rng) as usize);
@@ -74,7 +78,7 @@ fn train_svm(data: Vec<Vec<f64>>, labels: Vec<f64>) -> (Vec<f64>, f64) {
     return (w, b);
 }
 
-fn svm_predict(w: Vec<f64>, b: f64, point: Vec<f64>) -> f64 {
+fn svm_predict(w: &Vec<f64>, b: f64, point: &Vec<f64>) -> f64 {
     let mut sum = b;
     for i in 0..w.len() {
         sum += w[i] * point[i];
