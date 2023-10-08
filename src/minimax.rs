@@ -1,6 +1,8 @@
 use std::cmp::max;
 use std::cmp::min;
 
+mod connect4;
+
 #[cfg(test)]
 mod test_minimax {
     use super::*;
