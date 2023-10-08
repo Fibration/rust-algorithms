@@ -69,8 +69,8 @@ mod connect4 {
         return false;
     }
 
-    fn connect4_move(r#move: u8, game: &Connect4) -> (bool, Connect4) {
-        let col = r#move as usize;
+    fn connect4_move(player_move: u8, game: &Connect4) -> (bool, Connect4) {
+        let col = player_move as usize;
         let row = game.columns[col].len();
         let mut end = false;
         let mut new = game.columns.clone();
