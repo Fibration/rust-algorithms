@@ -1,5 +1,10 @@
 use std::cmp::max;
 use std::cmp::min;
+use std::collections::HashMap;
+use std::time::Instant;
+
+use self::connect4::connect4_new;
+use self::connect4::Connect4;
 
 mod connect4;
 
@@ -162,3 +167,76 @@ fn mtd(node: &(u32, i32, String), tree: &Vec<(u32, i32, String)>, guess: i32, de
     }
     g
 }
+
+#[test]
+fn test_mcts() {
+    let game = connect4_new(7, 6);
+}
+
+#[test]
+fn test_game_to_columns() {
+    let mut game = connect4_new(7, 6);
+    game.columns[0] = vec![false, true, false, true];
+    game.columns[6] = vec![false, true, false, true, false];
+    game.player = true;
+    let result = game_to_node(&game);
+    print!("{result:b}\n");
+    assert_eq!(
+        result,
+        0b111111000000000000000000000000000000001111001010000000000000000000000000000000001010
+    );
+    let new_game = node_to_game(result);
+    let first = &new_game.columns[0];
+    let last = &new_game.columns[6];
+    print!("{first:?}\n");
+    print!("{last:?}\n");
+    assert_eq!(new_game.columns, game.columns);
+}
+
+fn game_to_node(game: &Connect4) -> u128 {
+    let mut bit_rep = 0 as u128;
+    let mut bit_occupancy = 0 as u128;
+    let mut counter = 0;
+    for i in 0..game.columns.len() {
+        for j in 0..game.height as usize {
+            if game.columns[i].len() > j {
+                bit_rep += (game.columns[i][j] as u128) << counter;
+                bit_occupancy += 1 << counter;
+            }
+            counter += 1;
+        }
+    }
+    bit_rep + (bit_occupancy << counter) + ((game.player as u128) << 2 * counter - 1)
+}
+
+fn node_to_game(node: u128) -> Connect4 {
+    let player = ((&node >> 83) & 1) == 1;
+    let full_state = (&node - ((&node >> 83) << 83)) >> 42;
+    let player_state = &node - ((&node >> 83) << 83) - (full_state << 42);
+    print!("{player}\n{full_state:b}\n{player_state:b}\n");
+    let mut board: Vec<Vec<bool>> = Vec::new();
+    for i in 0..7 as usize {
+        board.push(Vec::new());
+        for j in 0..6 as usize {
+            if (full_state >> (i * 6 + j) & 1) == 1 {
+                board[i].push((player_state >> (i * 6 + j) & 1) == 1);
+            }
+        }
+    }
+    return Connect4 {
+        columns: board,
+        height: 6,
+        player: player,
+    };
+}
+
+// fn mcts(root: u8, tree: HashMap<u8, i32>) {
+//     let mut time = 60;
+//     while time > 0 {
+//         let now = Instant::now();
+//         let leaf = traverse(root);
+//         let simulation_result = rollout(leaf);
+//         backpropagate(leaf, simulation_result);
+//         time -= now.elapsed().as_secs();
+//     }
+// }

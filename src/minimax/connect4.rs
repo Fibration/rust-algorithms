@@ -1,6 +1,27 @@
+#[derive(Clone)]
 pub struct Connect4 {
-    columns: Vec<Vec<bool>>,
-    player: bool,
+    pub columns: Vec<Vec<bool>>,
+    pub height: u8,
+    pub player: bool,
+}
+
+pub fn connect4_new(num_columns: u8, height: u8) -> Connect4 {
+    let mut columns = Vec::new();
+    for _ in 0..num_columns {
+        columns.push(Vec::<bool>::new());
+    }
+    Connect4 {
+        columns: columns,
+        height: height,
+        player: false,
+    }
+}
+
+pub fn connect4_legal(game: Connect4) -> Vec<bool> {
+    game.columns
+        .iter()
+        .map(|x| x.len() as u8 >= game.height)
+        .collect()
 }
 
 fn check_contiguous(sequence: &Vec<bool>, player: bool) -> bool {
@@ -21,11 +42,15 @@ fn check_contiguous(sequence: &Vec<bool>, player: bool) -> bool {
 pub fn connect4_move(player_move: u8, game: &Connect4) -> (bool, Connect4) {
     let col = player_move as usize;
     let row = game.columns[col].len();
+    if row as u8 > game.height {
+        return (true, game.clone());
+    }
     let mut end = false;
     let mut new = game.columns.clone();
     new[col].push(game.player);
     let end_state = Connect4 {
         columns: new,
+        height: game.height,
         player: !game.player,
     };
 
@@ -94,6 +119,7 @@ fn test_connect4() {
             Vec::<bool>::new(),
             Vec::<bool>::new(),
         ],
+        height: 6,
         player: false,
     };
     let step0 = connect4_move(0, &game);
