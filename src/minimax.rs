@@ -3,6 +3,8 @@ use std::cmp::min;
 use std::collections::HashMap;
 use std::time::Instant;
 
+use self::connect4::connect4_legal;
+use self::connect4::connect4_move;
 use self::connect4::connect4_new;
 use self::connect4::Connect4;
 
@@ -179,11 +181,11 @@ fn test_game_to_columns() {
     game.columns[0] = vec![false, true, false, true];
     game.columns[6] = vec![false, true, false, true, false];
     game.player = true;
-    let result = game_to_node(&game);
+    let result = game_to_node(&game, false);
     print!("{result:b}\n");
     assert_eq!(
         result,
-        0b111111000000000000000000000000000000001111001010000000000000000000000000000000001010
+        0b0111111000000000000000000000000000000001111001010000000000000000000000000000000001010
     );
     let new_game = node_to_game(result);
     let first = &new_game.columns[0];
@@ -193,7 +195,7 @@ fn test_game_to_columns() {
     assert_eq!(new_game.columns, game.columns);
 }
 
-fn game_to_node(game: &Connect4) -> u128 {
+fn game_to_node(game: &Connect4, terminal: bool) -> u128 {
     let mut bit_rep = 0 as u128;
     let mut bit_occupancy = 0 as u128;
     let mut counter = 0;
@@ -206,13 +208,17 @@ fn game_to_node(game: &Connect4) -> u128 {
             counter += 1;
         }
     }
-    bit_rep + (bit_occupancy << counter) + ((game.player as u128) << 2 * counter - 1)
+    bit_rep
+        + (bit_occupancy << counter)
+        + ((game.player as u128) << 2 * counter - 1)
+        + ((terminal as u128) << 2 * counter)
 }
 
 fn node_to_game(node: u128) -> Connect4 {
-    let player = ((&node >> 83) & 1) == 1;
-    let full_state = (&node - ((&node >> 83) << 83)) >> 42;
-    let player_state = &node - ((&node >> 83) << 83) - (full_state << 42);
+    let terminal = &node >> 84;
+    let player = ((&node >> 83) - (terminal << 1) & 1) == 1;
+    let full_state = (&node - ((&node >> 83) << 83) - (terminal << 84)) >> 42;
+    let player_state = &node - ((&node >> 83) << 83) - (terminal << 84) - (full_state << 42);
     print!("{player}\n{full_state:b}\n{player_state:b}\n");
     let mut board: Vec<Vec<bool>> = Vec::new();
     for i in 0..7 as usize {
@@ -240,3 +246,63 @@ fn node_to_game(node: u128) -> Connect4 {
 //         time -= now.elapsed().as_secs();
 //     }
 // }
+
+fn traverse(
+    root: u128,
+    _tree: HashMap<u128, (Vec<u128>, f32)>,
+    _total: u32,
+    _record: HashMap<u128, u32>,
+) -> (
+    u128,
+    u32,
+    HashMap<u128, u32>,
+    HashMap<u128, (Vec<u128>, f32)>,
+) {
+    let mut total = _total;
+    let mut record = _record.clone();
+    let mut leaf = 0;
+    let mut fully_expanded = true;
+    let mut node = root;
+    let mut tree = _tree.clone();
+    while fully_expanded {
+        let mut children = tree.get(&node).unwrap().0.clone();
+        if children.len() == 0 {
+            for pos in 0..7 {
+                let game = node_to_game(node);
+                if connect4_legal(&game)[pos] {
+                    let (terminal, new_game) = connect4_move(pos as u8, &game);
+                    let new_node = game_to_node(&new_game, terminal);
+                    tree.insert(new_node, (Vec::new(), 0.0));
+                    children.push(new_node);
+                    tree.insert(node, (children.clone(), tree.get(&node).unwrap().1));
+                    record.insert(new_node, 0);
+                }
+            }
+            leaf = children[0];
+            fully_expanded = false;
+        } else {
+            let mut best_child = children[0];
+            let mut best_value: f32 = 0.0;
+            for child in &tree.get(&node).unwrap().0 {
+                let ucb = tree.get(&child).unwrap().1
+                    + ((total as f32).ln() / (record[&node] as f32)).sqrt();
+                if ucb > best_value {
+                    best_value = ucb;
+                    best_child = *child;
+                }
+            }
+            total += 1;
+            record.insert(best_child, record.get(&best_child).unwrap() + 1);
+            node = best_child;
+        }
+    }
+    total += 1;
+    record.insert(
+        leaf,
+        match record.get(&leaf) {
+            Some(x) => x + 1,
+            None => 1,
+        },
+    );
+    (leaf, total, record, tree)
+}
