@@ -3,9 +3,9 @@ use std::cmp::min;
 use std::collections::HashMap;
 use std::time::Instant;
 
-use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
+use rand_chacha::ChaCha8Rng;
 use rand_distr::Distribution;
 use rand_distr::Uniform;
 
@@ -316,7 +316,7 @@ fn traverse(
 
 #[test]
 fn test_rollout() {
-    let seed = StdRng::seed_from_u64(16);
+    let seed = ChaCha8Rng::seed_from_u64(22);
     let game = Connect4 {
         columns: vec![
             vec![false, true],
@@ -333,7 +333,7 @@ fn test_rollout() {
     assert_eq!(rollout(game_to_node(&game, false), seed), 1.0);
 }
 
-fn rollout(node: u128, seed: StdRng) -> f32 {
+fn rollout<T: Rng>(node: u128, seed: T) -> f32 {
     let mut game = node_to_game(node);
     let mut terminal = false;
     let mut rng = seed;
