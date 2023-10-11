@@ -3,9 +3,16 @@ use std::cmp::min;
 use std::collections::HashMap;
 use std::time::Instant;
 
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
+
+use rand_distr::Distribution;
+use rand_distr::Uniform;
+
 use self::connect4::connect4_legal;
 use self::connect4::connect4_move;
 use self::connect4::connect4_new;
+
 use self::connect4::Connect4;
 
 mod connect4;
@@ -305,4 +312,51 @@ fn traverse(
         },
     );
     (leaf, total, record, tree)
+}
+
+#[test]
+fn test_rollout() {
+    let seed = StdRng::seed_from_u64(16);
+    let game = Connect4 {
+        columns: vec![
+            vec![false, true],
+            vec![false, true],
+            vec![false, true],
+            vec![],
+            vec![false, true],
+            vec![false, true],
+            vec![false, true],
+        ],
+        height: 6,
+        player: false,
+    };
+    assert_eq!(rollout(game_to_node(&game, false), seed), 1.0);
+}
+
+fn rollout(node: u128, seed: StdRng) -> f32 {
+    let mut game = node_to_game(node);
+    let mut terminal = false;
+    let mut rng = seed;
+    let roll = Uniform::from(0..7);
+
+    while !terminal {
+        let moves = connect4_legal(&game);
+        println!("{moves:?}");
+        let mut not_chosen = true;
+        while not_chosen {
+            let choice: u8 = roll.sample(&mut rng);
+            println!("{choice}");
+            if moves.len() as u8 > choice && moves[choice as usize] {
+                (terminal, game) = connect4_move(choice, &game);
+                not_chosen = false;
+            }
+        }
+    }
+    if game.player {
+        // player 1 aka false has won so score is 1
+        return 1.0;
+    } else {
+        // player 2 aka true has won so score is -1
+        return -1.0;
+    }
 }

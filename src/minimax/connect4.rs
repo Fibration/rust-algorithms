@@ -20,7 +20,7 @@ pub fn connect4_new(num_columns: u8, height: u8) -> Connect4 {
 pub fn connect4_legal(game: &Connect4) -> Vec<bool> {
     game.columns
         .iter()
-        .map(|x| x.len() as u8 >= game.height)
+        .map(|x| x.len() as u8 <= game.height)
         .collect()
 }
 
