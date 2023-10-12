@@ -360,3 +360,37 @@ fn rollout<T: Rng>(node: u128, seed: T) -> f32 {
         return -1.0;
     }
 }
+
+#[test]
+fn test_backpropagate() {
+    let mut tree = HashMap::<u128, (Vec<u128>, f32)>::new();
+    tree.insert(0, (vec![1, 2], 1.0));
+    tree.insert(1, (vec![11, 12], 1.0));
+    tree.insert(2, (vec![21, 22], 0.0));
+    tree.insert(11, (vec![111, 112], 0.0));
+    tree.insert(12, (vec![], 0.0));
+    tree.insert(21, (vec![], 0.0));
+    tree.insert(22, (vec![], 0.0));
+    tree.insert(111, (vec![], 0.0));
+    tree.insert(112, (vec![], 0.0));
+
+    let path = vec![0, 1, 11, 111];
+    let value: f32 = 2.0;
+
+    let result = backpropagate(value, &path, &tree);
+    assert_eq!(result.get(&11).unwrap().1, 1.0);
+    assert_eq!(result.get(&0).unwrap().1, 1.5);
+}
+
+fn backpropagate(
+    value: f32,
+    path: &Vec<u128>,
+    _tree: &HashMap<u128, (Vec<u128>, f32)>,
+) -> HashMap<u128, (Vec<u128>, f32)> {
+    let mut tree = _tree.clone();
+    for node in (*path).clone() {
+        let (children, node_value) = tree.get(&node).unwrap();
+        tree.insert(node, ((*children).clone(), (node_value + value) / 2.0));
+    }
+    tree
+}
