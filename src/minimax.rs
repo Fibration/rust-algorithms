@@ -244,7 +244,7 @@ fn node_to_game(node: u128) -> Connect4 {
 }
 
 fn mcts(root: u128, _tree: HashMap<u128, (Vec<u128>, f32)>) -> HashMap<u128, (Vec<u128>, f32)> {
-    let mut time = 60;
+    let mut time = 60 as i64;
     let mut seed = ChaCha8Rng::seed_from_u64(22);
     let mut total = 0;
     let mut record = HashMap::<u128, u32>::new();
@@ -256,7 +256,7 @@ fn mcts(root: u128, _tree: HashMap<u128, (Vec<u128>, f32)>) -> HashMap<u128, (Ve
         (leaf, total, record, tree, path) = traverse(root, tree, total, record, &mut seed);
         let simulation_result = rollout(leaf, &mut seed);
         tree = backpropagate(simulation_result, &path, &tree);
-        time -= now.elapsed().as_secs();
+        time -= now.elapsed().as_secs() as i64;
     }
 
     return tree;
