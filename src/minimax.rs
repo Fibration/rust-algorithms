@@ -243,27 +243,37 @@ fn node_to_game(node: u128) -> Connect4 {
     };
 }
 
-// fn mcts(root: u8, tree: HashMap<u8, i32>) {
-//     let mut time = 60;
-//     while time > 0 {
-//         let now = Instant::now();
-//         let leaf = traverse(root);
-//         let simulation_result = rollout(leaf);
-//         backpropagate(leaf, simulation_result);
-//         time -= now.elapsed().as_secs();
-//     }
-// }
+fn mcts(root: u128, _tree: HashMap<u128, (Vec<u128>, f32)>) -> HashMap<u128, (Vec<u128>, f32)> {
+    let mut time = 60;
+    let mut seed = ChaCha8Rng::seed_from_u64(22);
+    let mut total = 0;
+    let mut record = HashMap::<u128, u32>::new();
+    let mut path: Vec<u128>;
+    let mut leaf: u128;
+    let mut tree = _tree.clone();
+    while time > 0 {
+        let now = Instant::now();
+        (leaf, total, record, tree, path) = traverse(root, tree, total, record, &mut seed);
+        let simulation_result = rollout(leaf, &mut seed);
+        tree = backpropagate(simulation_result, &path, &tree);
+        time -= now.elapsed().as_secs();
+    }
 
-fn traverse(
+    return tree;
+}
+
+fn traverse<T: Rng>(
     root: u128,
     _tree: HashMap<u128, (Vec<u128>, f32)>,
     _total: u32,
     _record: HashMap<u128, u32>,
+    _seed: T,
 ) -> (
     u128,
     u32,
     HashMap<u128, u32>,
     HashMap<u128, (Vec<u128>, f32)>,
+    Vec<u128>,
 ) {
     let mut total = _total;
     let mut record = _record.clone();
@@ -271,6 +281,9 @@ fn traverse(
     let mut fully_expanded = true;
     let mut node = root;
     let mut tree = _tree.clone();
+    let mut path = Vec::<u128>::new();
+    let mut rng = _seed;
+
     while fully_expanded {
         let mut children = tree.get(&node).unwrap().0.clone();
         if children.len() == 0 {
@@ -285,7 +298,9 @@ fn traverse(
                     record.insert(new_node, 0);
                 }
             }
-            leaf = children[0];
+            let uniform = Uniform::new(0, children.len());
+            leaf = children[uniform.sample(&mut rng)];
+            path.push(leaf);
             fully_expanded = false;
         } else {
             let mut best_child = children[0];
@@ -301,6 +316,7 @@ fn traverse(
             total += 1;
             record.insert(best_child, record.get(&best_child).unwrap() + 1);
             node = best_child;
+            path.push(best_child);
         }
     }
     total += 1;
@@ -311,7 +327,7 @@ fn traverse(
             None => 1,
         },
     );
-    (leaf, total, record, tree)
+    (leaf, total, record, tree, path)
 }
 
 #[test]
