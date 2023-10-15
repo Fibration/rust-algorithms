@@ -1,12 +1,10 @@
 use std::collections::HashMap;
 
-use rand_distr::num_traits::Float;
-
 #[test]
 fn test_entropy() {
     let mut sample = Vec::<f32>::new();
     let mut labels = Vec::<u8>::new();
-    for i in 0..100 {
+    for i in 0..99 {
         sample.push(i as f32);
         if i % 3 == 0 {
             labels.push(0);
@@ -14,7 +12,10 @@ fn test_entropy() {
             labels.push(1);
         }
     }
-    assert_eq!(entropy(sample, labels), 0.9248187);
+    assert_eq!(
+        entropy(sample, labels),
+        -(1.0 / 3.0) * f32::log2(1.0 / 3.0) - (2.0 / 3.0) * f32::log2(2.0 / 3.0)
+    );
 }
 
 fn entropy(_sample: Vec<f32>, labels: Vec<u8>) -> f32 {
