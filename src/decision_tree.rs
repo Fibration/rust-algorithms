@@ -71,3 +71,34 @@ fn information_gain(pop1: Vec<u8>, pop2: Vec<Vec<u8>>) -> f32 {
     }
     entropy(pop1) - new_entropies
 }
+
+#[test]
+fn test_id3() {
+    let tree = HashMap::from([
+        (0, (0, 0.5, 1, 2, None)),
+        (1, (1, 0.5, 3, 4, None)),
+        (2, (2, 0.5, 5, 6, None)),
+        (3, (1, 0.5, 3, 4, Some(0.2))),
+        (4, (1, 0.5, 3, 4, Some(0.4))),
+        (5, (2, 0.5, 5, 6, Some(0.6))),
+        (6, (2, 0.5, 5, 6, Some(0.8))),
+    ]);
+    let sample = vec![0.4,0.6];
+    assert_eq!(id3(sample, tree), 0.4);
+}
+
+fn id3(sample: Vec<f32>, tree: HashMap<u32, (u8, f32, u32, u32, Option<f32>)>) -> f32 {
+    let mut current_node: u32 = 0;
+    loop {
+        let split = tree.get(&current_node).unwrap();
+        if let Some(z) = split.4 {
+            return z;
+        } else {
+            if sample[split.0 as usize] <= split.1 {
+                current_node = split.2;
+            } else {
+                current_node = split.3;
+            }
+        }
+    }
+}
