@@ -1,5 +1,9 @@
 use std::collections::HashMap;
 
+use rand::SeedableRng;
+use rand_chacha::ChaCha8Rng;
+use rand_distr::{Distribution, Normal, Uniform};
+
 #[test]
 fn test_entropy() {
     let mut labels = Vec::<u8>::new();
@@ -83,7 +87,7 @@ fn test_id3() {
         (5, (2, 0.5, 5, 6, Some(0.6))),
         (6, (2, 0.5, 5, 6, Some(0.8))),
     ]);
-    let sample = vec![0.4,0.6];
+    let sample = vec![0.4, 0.6];
     assert_eq!(id3(sample, tree), 0.4);
 }
 
@@ -101,4 +105,52 @@ fn id3(sample: Vec<f32>, tree: HashMap<u32, (u8, f32, u32, u32, Option<f32>)>) -
             }
         }
     }
+}
+
+#[test]
+fn test_id3_train() {
+    let mut data = Vec::<Vec<f32>>::new();
+    let mut labels = Vec::<f32>::new();
+    let mut seed = ChaCha8Rng::seed_from_u64(22);
+    let uniform = Uniform::from(0.0..1.0);
+    let normal = Normal::new(0.0, 0.05).unwrap();
+
+    for _ in 0..100 {
+        let x = vec![
+            uniform.sample(&mut seed),
+            uniform.sample(&mut seed),
+            uniform.sample(&mut seed),
+        ];
+        let delta_y = normal.sample(&mut seed);
+
+        if x[0] <= 0.5 {
+            if x[1] <= 0.5 {
+                labels.push(0.2 + delta_y);
+            } else {
+                labels.push(0.4 + delta_y);
+            }
+        } else {
+            if x[2] <= 0.5 {
+                labels.push(0.6 + delta_y);
+            } else {
+                labels.push(0.8 + delta_y);
+            }
+        }
+        data.push(x);
+    }
+
+    let tree: HashMap<u32, (u8, f32, u32, u32, Option<f32>)> = id3_train(data);
+    assert!(id3(vec![0.1, 0.1, 0.1], tree) < 0.3);
+}
+
+fn id3_train(data: Vec<Vec<f32>>) -> HashMap<u32, (u8, f32, u32, u32, Option<f32>)> {
+    HashMap::from([
+        (0, (0, 0.5, 1, 2, None)),
+        (1, (1, 0.5, 3, 4, None)),
+        (2, (2, 0.5, 5, 6, None)),
+        (3, (1, 0.5, 3, 4, Some(0.2))),
+        (4, (1, 0.5, 3, 4, Some(0.4))),
+        (5, (2, 0.5, 5, 6, Some(0.6))),
+        (6, (2, 0.5, 5, 6, Some(0.8))),
+    ])
 }
