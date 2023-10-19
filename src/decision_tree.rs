@@ -78,7 +78,7 @@ fn information_gain(pop1: Vec<u8>, pop2: Vec<Vec<u8>>) -> f32 {
 
 #[test]
 fn test_id3() {
-    let tree = HashMap::from([
+    let tree = DecisionTree::from(vec![
         (0, (0, 0.5, 1, 2, None)),
         (1, (1, 0.5, 3, 4, None)),
         (2, (2, 0.5, 5, 6, None)),
@@ -91,10 +91,10 @@ fn test_id3() {
     assert_eq!(id3(sample, tree), 0.4);
 }
 
-fn id3(sample: Vec<f32>, tree: HashMap<u32, (u8, f32, u32, u32, Option<f32>)>) -> f32 {
+fn id3(sample: Vec<f32>, tree: DecisionTree) -> f32 {
     let mut current_node: u32 = 0;
     loop {
-        let split = tree.get(&current_node).unwrap();
+        let split = tree.tree.get(&current_node).unwrap();
         if let Some(z) = split.4 {
             return z;
         } else {
@@ -139,12 +139,12 @@ fn test_id3_train() {
         data.push(x);
     }
 
-    let tree: HashMap<u32, (u8, f32, u32, u32, Option<f32>)> = id3_train(data);
-    assert!(id3(vec![0.1, 0.1, 0.1], tree) < 0.3);
+    let tree = id3_train(data);
+    assert!(id3(vec![0.1, 0.1, 0.1], tree.tree) < 0.3);
 }
 
-fn id3_train(data: Vec<Vec<f32>>) -> HashMap<u32, (u8, f32, u32, u32, Option<f32>)> {
-    HashMap::from([
+fn id3_train(data: Vec<Vec<f32>>) -> DecisionTree {
+    DecisionTree::from(vec![
         (0, (0, 0.5, 1, 2, None)),
         (1, (1, 0.5, 3, 4, None)),
         (2, (2, 0.5, 5, 6, None)),
@@ -153,4 +153,17 @@ fn id3_train(data: Vec<Vec<f32>>) -> HashMap<u32, (u8, f32, u32, u32, Option<f32
         (5, (2, 0.5, 5, 6, Some(0.6))),
         (6, (2, 0.5, 5, 6, Some(0.8))),
     ])
+}
+
+struct DecisionTree {
+    tree: HashMap<u32, (u8, f32, u32, u32, Option<f32>)>,
+}
+
+impl DecisionTree {
+    fn from(data: Vec<(u32, (u8, f32, u32, u32, Option<f32>))>) -> DecisionTree {
+        DecisionTree { tree: data }
+    }
+    fn get_split_fields(&self) -> Vec<u8> {
+        self.tree.iter().map(|x| x.1 .0).collect()
+    }
 }
