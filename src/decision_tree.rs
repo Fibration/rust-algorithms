@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -79,29 +79,30 @@ fn information_gain(pop1: Vec<u8>, pop2: Vec<Vec<u8>>) -> f32 {
 #[test]
 fn test_id3() {
     let tree = DecisionTree::from(vec![
-        (0, (0, 0.5, 1, 2, None)),
-        (1, (1, 0.5, 3, 4, None)),
-        (2, (2, 0.5, 5, 6, None)),
-        (3, (1, 0.5, 3, 4, Some(0.2))),
-        (4, (1, 0.5, 3, 4, Some(0.4))),
-        (5, (2, 0.5, 5, 6, Some(0.6))),
-        (6, (2, 0.5, 5, 6, Some(0.8))),
+        ("root".to_string(), (0, 0.5, None)),
+        ("0".to_string(), (1, 0.5, None)),
+        ("1".to_string(), (1, 0.5, None)),
+        ("00".to_string(), (2, 0.5, Some(0.2))),
+        ("01".to_string(), (2, 0.5, Some(0.4))),
+        ("10".to_string(), (3, 0.5, Some(0.6))),
+        ("11".to_string(), (3, 0.5, Some(0.8))),
     ]);
     let sample = vec![0.4, 0.6];
     assert_eq!(id3(sample, tree), 0.4);
 }
 
 fn id3(sample: Vec<f32>, tree: DecisionTree) -> f32 {
-    let mut current_node: u32 = 0;
+    let mut current_node = String::from("0");
     loop {
-        let split = tree.tree.get(&current_node).unwrap();
-        if let Some(z) = split.4 {
+        let split = tree.tree.get(&current_node.clone()).unwrap();
+        if let Some(z) = split.2 {
             return z;
         } else {
+            let children = DecisionTree.get_children(current_node.clone());
             if sample[split.0 as usize] <= split.1 {
-                current_node = split.2;
+                current_node = children.0;
             } else {
-                current_node = split.3;
+                current_node = children.1;
             }
         }
     }
@@ -140,30 +141,61 @@ fn test_id3_train() {
     }
 
     let tree = id3_train(data);
-    assert!(id3(vec![0.1, 0.1, 0.1], tree.tree) < 0.3);
+    assert!(id3(vec![0.1, 0.1, 0.1], tree) < 0.3);
 }
 
 fn id3_train(data: Vec<Vec<f32>>) -> DecisionTree {
+    let mut fields: Vec<u8> = (0..data[0].len()).map(|x| x as u8).collect();
+    let tree = DecisionTree::new();
+    let mut unexpanded = VecDeque::<String>::new();
+    unexpanded.push_back(String::from("root"));
+
+    while unexpanded.len() > 0 {
+        let parent = unexpanded.pop_front().unwrap();
+        let children = tree.get_children(parent.clone());
+        unexpanded.push_back(children.0);
+        unexpanded.push_back(children.1);
+        for field in 0..data[0].len() {}
+    }
+
     DecisionTree::from(vec![
-        (0, (0, 0.5, 1, 2, None)),
-        (1, (1, 0.5, 3, 4, None)),
-        (2, (2, 0.5, 5, 6, None)),
-        (3, (1, 0.5, 3, 4, Some(0.2))),
-        (4, (1, 0.5, 3, 4, Some(0.4))),
-        (5, (2, 0.5, 5, 6, Some(0.6))),
-        (6, (2, 0.5, 5, 6, Some(0.8))),
+        ("root".to_string(), (0, 0.5, None)),
+        ("0".to_string(), (1, 0.5, None)),
+        ("1".to_string(), (1, 0.5, None)),
+        ("00".to_string(), (2, 0.5, Some(0.2))),
+        ("01".to_string(), (2, 0.5, Some(0.4))),
+        ("10".to_string(), (3, 0.5, Some(0.6))),
+        ("11".to_string(), (3, 0.5, Some(0.8))),
     ])
 }
 
 struct DecisionTree {
-    tree: HashMap<u32, (u8, f32, u32, u32, Option<f32>)>,
+    tree: HashMap<String, (u8, f32, Option<f32>)>,
 }
 
 impl DecisionTree {
-    fn from(data: Vec<(u32, (u8, f32, u32, u32, Option<f32>))>) -> DecisionTree {
-        DecisionTree { tree: data }
+    fn new() -> DecisionTree {
+        DecisionTree {
+            tree: HashMap::new(),
+        }
     }
+
     fn get_split_fields(&self) -> Vec<u8> {
         self.tree.iter().map(|x| x.1 .0).collect()
+    }
+
+    fn get_children(&self, node_id: String) -> (String, String) {
+        if node_id == "root" {
+            return (String::from("0"), String::from("1"));
+        }
+        (node_id.clone() + "0", node_id.clone() + "1")
+    }
+}
+
+impl From<Vec<(String, (u8, f32, Option<f32>))>> for DecisionTree {
+    fn from(data: Vec<(String, (u8, f32, Option<f32>))>) -> DecisionTree {
+        DecisionTree {
+            tree: HashMap::from_iter(data),
+        }
     }
 }
