@@ -1,4 +1,5 @@
 use std::collections::{HashMap, VecDeque};
+use std::hash::Hash;
 
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -20,9 +21,9 @@ fn test_entropy() {
     );
 }
 
-fn entropy(labels: Vec<u8>) -> f32 {
+fn entropy<T: Eq + Hash>(labels: Vec<T>) -> f32 {
     let total = labels.len() as f32;
-    let mut unique_labels = HashMap::<u8, u32>::new();
+    let mut unique_labels = HashMap::<T, u32>::new();
     let mut ent = 0.0;
     for x in labels {
         unique_labels.insert(x, *(unique_labels.get(&x).unwrap_or_else(|| &0)) + 1);
@@ -68,7 +69,7 @@ fn test_information_gain() {
     );
 }
 
-fn information_gain(pop1: Vec<u8>, pop2: Vec<Vec<u8>>) -> f32 {
+fn information_gain<T: Eq + Hash>(pop1: Vec<T>, pop2: Vec<Vec<T>>) -> f32 {
     let mut new_entropies = 0.0;
     for x in pop2 {
         new_entropies += (x.len() as f32 / pop1.len() as f32) * entropy(x)
