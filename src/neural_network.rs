@@ -65,22 +65,22 @@ impl NeuralNetworkLayer {
         let partial: Vec<Vec<f64>> = (self.a)
             .iter()
             .enumerate()
-            .map(|(j, row)| row.iter().map(|x| x * error[j]).collect())
+            .map(|(j, row)| row.iter().map(|x| x * derivatives[j] * error[j]).collect())
             .collect();
         let bias: Vec<f64> = self
             .b
             .iter()
             .enumerate()
-            .map(|(i, x)| x * error[i])
+            .map(|(i, x)| x * derivatives[i] * error[i])
             .collect();
         let new_error = (0..(self.dim_in) as usize)
             .collect::<Vec<_>>()
             .iter()
             .map(|i| {
-                derivatives
+                (0..(self.dim_out) as usize)
+                    .collect::<Vec<_>>()
                     .iter()
-                    .enumerate()
-                    .map(|(j, df)| df * partial[j][*i])
+                    .map(|j| partial[*j][*i])
                     .fold(0.0, |acc, x| acc + x)
             })
             .collect();
