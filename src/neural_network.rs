@@ -61,11 +61,17 @@ impl NeuralNetworkLayer {
         )
     }
 
-    fn back(&self, error: &[f64], derivatives: &[f64]) -> (Vec<Vec<f64>>, Vec<f64>) {
+    fn back(&self, error: &[f64], derivatives: &[f64]) -> (Vec<Vec<f64>>, Vec<f64>, Vec<f64>) {
         let partial: Vec<Vec<f64>> = (self.a)
             .iter()
             .enumerate()
             .map(|(j, row)| row.iter().map(|x| x * error[j]).collect())
+            .collect();
+        let bias: Vec<f64> = self
+            .b
+            .iter()
+            .enumerate()
+            .map(|(i, x)| x * error[i])
             .collect();
         let new_error = (0..(self.dim_in) as usize)
             .collect::<Vec<_>>()
@@ -78,7 +84,7 @@ impl NeuralNetworkLayer {
                     .fold(0.0, |acc, x| acc + x)
             })
             .collect();
-        (partial, new_error)
+        (partial, bias, new_error)
     }
 }
 
@@ -125,5 +131,6 @@ fn test_neural_network_layer_back() {
     let back_result = nn.back(&[1.0, 1.0, 1.0], &result.1);
     assert_eq!(back_result.0.len() as u32, nn.dim_out);
     assert_eq!(back_result.0[0].len() as u32, nn.dim_in);
-    assert_eq!(back_result.1.len() as u32, nn.dim_in);
+    assert_eq!(back_result.1.len() as u32, nn.dim_out);
+    assert_eq!(back_result.2.len() as u32, nn.dim_in);
 }
