@@ -1,5 +1,8 @@
 use rand_distr::{Distribution, Normal};
-use std::fmt::{self, Debug};
+use std::{
+    array,
+    fmt::{self, Debug},
+};
 
 struct NeuralNetworkLayer {
     dim_in: u32,
@@ -133,4 +136,39 @@ fn test_neural_network_layer_back() {
     assert_eq!(back_result.0[0].len() as u32, nn.dim_in);
     assert_eq!(back_result.1.len() as u32, nn.dim_out);
     assert_eq!(back_result.2.len() as u32, nn.dim_in);
+}
+
+// consider varying the final activation function, i.e. softmax
+fn linear_nn(dim: &[u32]) -> Vec<NeuralNetworkLayer> {
+    dim[..(dim.len() - 1)]
+        .iter()
+        .zip(dim[1..].iter())
+        .map(|(m, n)| {
+            NeuralNetworkLayer::new(
+                *m,
+                *n,
+                |x| if x > 0.0 { x } else { 0.0 },
+                |x| if x > 0.0 { 1.0 } else { 0.0 },
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn test_linear_nn() {
+    let linear = linear_nn(&[16, 8, 4, 2]);
+    let input: Vec<f64> = (0..16)
+        .collect::<Vec<_>>()
+        .iter()
+        .map(|x| *x as f64)
+        .collect();
+    let result = linear[2]
+        .forward(&linear[1].forward(&linear[0].forward(&input[..]).0[..]).0[..])
+        .0;
+    println!("{result:?}");
+    assert_eq!(linear.len(), 3);
+    assert_eq!(linear[0].dim_in, 16);
+    assert_eq!(linear[2].dim_out, 2);
+    assert_eq!(linear[0].dim_out, linear[1].dim_in);
+    assert_eq!(linear[1].dim_out, linear[2].dim_in);
 }
