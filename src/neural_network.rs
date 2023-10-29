@@ -138,6 +138,27 @@ fn test_neural_network_layer_back() {
     assert_eq!(back_result.2.len() as u32, nn.dim_in);
 }
 
+enum LossFunction {
+    CrossEntropy,
+}
+
+impl LossFunction {
+    fn activation(&self) -> fn(&[f64]) -> Vec<f64> {
+        match self {
+            Self::CrossEntropy => |x: &[f64]| {
+                let denom = x.iter().map(|y| y.exp()).fold(0.0, |acc, y| acc + y);
+                x.iter().map(|y| y.exp() / denom).collect()
+            },
+        }
+    }
+
+    fn derivative(&self) -> fn(&[f64], &[f64]) -> Vec<f64> {
+        match self {
+            Self::CrossEntropy => |x, y| x.iter().zip(y.iter()).map(|(xi, yi)| xi - yi).collect(),
+        }
+    }
+}
+
 // consider varying the final activation function, i.e. softmax
 fn linear_nn(dim: &[u32]) -> Vec<NeuralNetworkLayer> {
     dim[..(dim.len() - 1)]
