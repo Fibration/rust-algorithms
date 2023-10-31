@@ -12,6 +12,11 @@ trait Derivative {
     fn derivative(&self) -> fn(&[f64], &[f64]) -> Vec<f64>;
 }
 
+trait Layer {
+    fn forward(&self, input: &[f64]) -> Vec<f64>;
+    fn back(&self, output: &[f64], error: &[f64]) -> (Vec<Vec<f64>>, Vec<f64>, Vec<f64>);
+}
+
 #[derive(Clone, Copy)]
 enum ActivationFunction {
     ReLU,
@@ -78,20 +83,52 @@ impl Derivative for LossFunction {
         }
     }
 }
+#[derive(Clone, Copy)]
+enum Function {
+    ReLU,
+    CrossEntropy,
+}
 
-struct NeuralNetworkLayer<T>
-where
-    T: Activation + Derivative,
-{
+impl Activation for Function {
+    fn activation(&self) -> fn(&[f64]) -> Vec<f64> {
+        match self {
+            Self::CrossEntropy => |x: &[f64]| {
+                let denom = x.iter().map(|y| y.exp()).fold(0.0, |acc, y| acc + y);
+                x.iter().map(|y| y.exp() / denom).collect()
+            },
+            Self::ReLU => |x| {
+                x.iter()
+                    .map(|xi| if *xi > 0.0 { *xi } else { 0.0 })
+                    .collect()
+            },
+        }
+    }
+}
+
+impl Derivative for Function {
+    fn derivative(&self) -> fn(&[f64], &[f64]) -> Vec<f64> {
+        match self {
+            Self::CrossEntropy => |x, y| x.iter().zip(y.iter()).map(|(xi, yi)| *yi - *xi).collect(),
+            Self::ReLU => |x, y| {
+                x.iter()
+                    .zip(y.iter())
+                    .map(|(xi, yi)| if *xi > 0.0 { *yi } else { 0.0 })
+                    .collect()
+            },
+        }
+    }
+}
+
+struct NeuralNetworkLayer {
     dim_in: u32,
     dim_out: u32,
     a: Vec<Vec<f64>>,
     b: Vec<f64>,
-    cap: T,
+    cap: Function,
 }
 
-impl<T: Activation + Derivative> NeuralNetworkLayer<T> {
-    fn new(dim_in: u32, dim_out: u32, cap: T) -> Self {
+impl NeuralNetworkLayer {
+    fn new(dim_in: u32, dim_out: u32, cap: Function) -> Self {
         let mut rng = rand::thread_rng();
         let normal = Normal::new(0.0, 1.0).unwrap();
         Self {
@@ -114,7 +151,8 @@ impl<T: Activation + Derivative> NeuralNetworkLayer<T> {
             cap: cap,
         }
     }
-
+}
+impl Layer for NeuralNetworkLayer {
     fn forward(&self, input: &[f64]) -> Vec<f64> {
         let linear: Vec<f64> = (0..self.dim_out as usize)
             .collect::<Vec<_>>()
@@ -155,7 +193,7 @@ impl<T: Activation + Derivative> NeuralNetworkLayer<T> {
     }
 }
 
-impl<T: Activation + Derivative> Debug for NeuralNetworkLayer<T> {
+impl Debug for NeuralNetworkLayer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Neural Network Layer")
             .field("input dimensions", &self.dim_in)
@@ -168,7 +206,7 @@ impl<T: Activation + Derivative> Debug for NeuralNetworkLayer<T> {
 
 #[test]
 fn test_neural_network_layer_forward() {
-    let mut nn = NeuralNetworkLayer::new(5, 3, ActivationFunction::ReLU);
+    let mut nn = NeuralNetworkLayer::new(5, 3, Function::ReLU);
     println!("{nn:?}");
     nn.a = vec![
         vec![1.0, 1.0, 1.0, 1.0, 1.0],
@@ -182,7 +220,7 @@ fn test_neural_network_layer_forward() {
 
 #[test]
 fn test_neural_network_layer_back() {
-    let mut nn = NeuralNetworkLayer::new(5, 3, ActivationFunction::ReLU);
+    let mut nn = NeuralNetworkLayer::new(5, 3, Function::ReLU);
     println!("{nn:?}");
     nn.a = vec![
         vec![1.0, 1.0, 1.0, 1.0, 1.0],
@@ -198,21 +236,24 @@ fn test_neural_network_layer_back() {
     assert_eq!(back_result.2.len() as u32, nn.dim_in);
 }
 
-// consider varying the final activation function, i.e. softmax
-fn linear_nn<T: Activation + Derivative + Clone>(
-    dim: &[u32],
-    activation: T,
-) -> Vec<NeuralNetworkLayer<T>> {
-    dim[..(dim.len() - 1)]
+fn linear_nn(dim: &[u32], activation: Function, loss: Function) -> Vec<NeuralNetworkLayer> {
+    let mut nn: Vec<NeuralNetworkLayer> = dim[..(dim.len() - 1)]
         .iter()
         .zip(dim[1..].iter())
         .map(|(m, n)| NeuralNetworkLayer::new(*m, *n, activation.clone()))
-        .collect()
+        .collect();
+    nn.pop();
+    nn.push(NeuralNetworkLayer::new(
+        dim[dim.len() - 2],
+        dim[dim.len() - 1],
+        loss,
+    ));
+    nn
 }
 
 #[test]
 fn test_linear_nn() {
-    let linear = linear_nn(&[16, 8, 4, 2], ActivationFunction::ReLU);
+    let linear = linear_nn(&[16, 8, 4, 2], Function::ReLU, Function::CrossEntropy);
     let input: Vec<f64> = (0..16)
         .collect::<Vec<_>>()
         .iter()
