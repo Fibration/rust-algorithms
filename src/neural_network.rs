@@ -1,4 +1,4 @@
-use rand_distr::{Distribution, Normal};
+use rand_distr::{num_traits::Float, Distribution, Normal};
 use std::{
     array,
     fmt::{self, Debug},
@@ -339,4 +339,73 @@ fn test_convlayer_forward() {
     conv.a.push(vec![1.0, 1.0]);
     let result = conv.forward(&input);
     assert_eq!(result, [7.0, 9.0, 7.0, 7.0, 9.0, 7.0]);
+}
+
+#[test]
+fn test_convolution() {
+    let mut input = Vec::new();
+    input.push(vec![1.0, 2.0, 2.0, 1.0]);
+    input.push(vec![1.5, 2.5, 2.5, 1.5]);
+    input.push(vec![1.5, 2.5, 2.5, 1.5]);
+    input.push(vec![1.0, 2.0, 2.0, 1.0]);
+    let mut filter = Vec::new();
+    filter.push(vec![1.0, 1.0]);
+    filter.push(vec![1.0, 1.0]);
+    let output = convolution(&input, &filter, (1, 1), (2, 2));
+    assert_eq!(output.len(), 3);
+    assert_eq!(output[0].len(), 3);
+    assert_eq!(output[0], [1.0, 4.0, 1.0]);
+    assert_eq!(output[1], [3.0, 10.0, 3.0]);
+    assert_eq!(output[2], [1.0, 4.0, 1.0]);
+}
+
+fn convolution(
+    data: &[Vec<f64>],
+    filter: &[Vec<f64>],
+    padding: (usize, usize),
+    stride: (usize, usize),
+) -> Vec<Vec<f64>> {
+    let mut padded = Vec::new();
+    for _ in 0..padding.0 {
+        let mut row = Vec::new();
+        for _ in 0..(data[0].len() + 2 * padding.1) {
+            row.push(0.0);
+        }
+        padded.push(row);
+    }
+    for i in 0..data.len() {
+        let mut row = Vec::new();
+        for _ in 0..padding.1 {
+            row.push(0.0);
+        }
+        for j in 0..data[i].len() {
+            row.push(data[i][j]);
+        }
+        for _ in 0..padding.1 {
+            row.push(0.0);
+        }
+        padded.push(row);
+    }
+    for _ in 0..padding.0 {
+        let mut row = Vec::new();
+        for _ in 0..(data[0].len() + 2 * padding.1) {
+            row.push(0.0);
+        }
+        padded.push(row);
+    }
+    let mut output = Vec::new();
+    for i in 0..((padded.len() - filter.len() + stride.0) / stride.0) {
+        let mut row = Vec::new();
+        for j in 0..(padded[0].len() - filter[0].len() + stride.1) / stride.1 {
+            let mut convolution = 0.0;
+            for k in 0..filter.len() {
+                for l in 0..filter[0].len() {
+                    convolution += filter[k][l] * padded[k + i * stride.0][l + j * stride.1];
+                }
+            }
+            row.push(convolution);
+        }
+        output.push(row);
+    }
+    output
 }
