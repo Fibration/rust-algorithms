@@ -267,3 +267,76 @@ fn test_linear_nn() {
     assert_eq!(linear[0].dim_out, linear[1].dim_in);
     assert_eq!(linear[1].dim_out, linear[2].dim_in);
 }
+
+struct ConvolutionLayer {
+    dim_in: (usize, usize),
+    dim_out: (usize, usize),
+    kernel: (usize, usize),
+    a: Vec<Vec<f64>>,
+    cap: Function,
+}
+
+impl ConvolutionLayer {
+    fn new(
+        dim_in: (usize, usize),
+        dim_out: (usize, usize),
+        kernel: (usize, usize),
+        cap: Function,
+    ) -> Self {
+        let mut rng = rand::thread_rng();
+        let normal = Normal::new(0.0, 1.0).unwrap();
+        ConvolutionLayer {
+            dim_in,
+            dim_out,
+            kernel,
+            a: (0..kernel.0)
+                .map(|_| {
+                    (0..kernel.1)
+                        .collect::<Vec<usize>>()
+                        .iter()
+                        .map(|_| normal.sample(&mut rng))
+                        .collect()
+                })
+                .collect(),
+            cap,
+        }
+    }
+}
+
+impl Layer for ConvolutionLayer {
+    // TODO implement stride and padding
+    // (row, col)
+    fn forward(&self, input: &[f64]) -> Vec<f64> {
+        let mut output = Vec::new();
+        for i in 0..(self.dim_in.0 - self.kernel.0 + 1) as usize {
+            for j in 0..(self.dim_in.1 - self.kernel.1 + 1) as usize {
+                let mut patch_sum = 0.0;
+                for k in 0..(self.kernel.0) as usize {
+                    patch_sum += input[(j + (i + k) * self.dim_in.1 as usize)
+                        ..(j + (i + k) * self.dim_in.1 as usize + self.kernel.1 as usize)]
+                        .iter()
+                        .zip(self.a[k].iter())
+                        .map(|(x, y)| x * y)
+                        .fold(0.0, |acc, x| acc + x);
+                }
+                output.push(patch_sum);
+            }
+        }
+        output
+    }
+
+    fn back(&self, output: &[f64], error: &[f64]) -> (Vec<Vec<f64>>, Vec<f64>, Vec<f64>) {
+        (todo!(), todo!(), todo!())
+    }
+}
+
+#[test]
+fn test_convlayer_forward() {
+    let input = vec![1.0, 2.0, 2.0, 1.0, 1.5, 2.5, 2.5, 1.5, 1.0, 2.0, 2.0, 1.0];
+    let mut conv = ConvolutionLayer::new((3, 4), (2, 3), (2, 2), Function::ReLU);
+    conv.a = Vec::new();
+    conv.a.push(vec![1.0, 1.0]);
+    conv.a.push(vec![1.0, 1.0]);
+    let result = conv.forward(&input);
+    assert_eq!(result, [7.0, 9.0, 7.0, 7.0, 9.0, 7.0]);
+}
