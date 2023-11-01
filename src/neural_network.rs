@@ -272,6 +272,8 @@ struct ConvolutionLayer {
     dim_in: (usize, usize),
     dim_out: (usize, usize),
     kernel: (usize, usize),
+    padding: (usize, usize),
+    stride: (usize, usize),
     a: Vec<Vec<f64>>,
     cap: Function,
 }
@@ -281,6 +283,8 @@ impl ConvolutionLayer {
         dim_in: (usize, usize),
         dim_out: (usize, usize),
         kernel: (usize, usize),
+        padding: (usize, usize),
+        stride: (usize, usize),
         cap: Function,
     ) -> Self {
         let mut rng = rand::thread_rng();
@@ -289,6 +293,8 @@ impl ConvolutionLayer {
             dim_in,
             dim_out,
             kernel,
+            padding,
+            stride,
             a: (0..kernel.0)
                 .map(|_| {
                     (0..kernel.1)
@@ -303,26 +309,49 @@ impl ConvolutionLayer {
     }
 }
 
+#[test]
+fn test_stack() {
+    assert_eq!(
+        stack(&[1.0, 1.0, 1.0, 1.0], (2, 2)),
+        Vec::from([[1.0, 1.0], [1.0, 1.0]])
+    );
+}
+
+fn stack(flat: &[f64], dim: (usize, usize)) -> Vec<Vec<f64>> {
+    let mut stacked = Vec::new();
+    for i in 0..dim.0 {
+        let mut row = Vec::new();
+        for j in 0..dim.1 {
+            row.push(flat[i * dim.1 + j]);
+        }
+        stacked.push(row);
+    }
+    stacked
+}
+
+#[test]
+fn test_unstack() {
+    let matrix: Vec<Vec<f64>> = Vec::from([vec![1.0, 1.0], vec![1.0, 1.0]]);
+    assert_eq!(unstack(&matrix), [1.0, 1.0, 1.0, 1.0]);
+}
+
+fn unstack(matrix: &[Vec<f64>]) -> Vec<f64> {
+    let mut flat = Vec::new();
+    for i in 0..matrix.len() {
+        for j in 0..matrix[0].len() {
+            flat.push(matrix[i][j]);
+        }
+    }
+    flat
+}
+
 impl Layer for ConvolutionLayer {
     // TODO implement stride and padding
     // (row, col)
     fn forward(&self, input: &[f64]) -> Vec<f64> {
-        let mut output = Vec::new();
-        for i in 0..(self.dim_in.0 - self.kernel.0 + 1) as usize {
-            for j in 0..(self.dim_in.1 - self.kernel.1 + 1) as usize {
-                let mut patch_sum = 0.0;
-                for k in 0..(self.kernel.0) as usize {
-                    patch_sum += input[(j + (i + k) * self.dim_in.1 as usize)
-                        ..(j + (i + k) * self.dim_in.1 as usize + self.kernel.1 as usize)]
-                        .iter()
-                        .zip(self.a[k].iter())
-                        .map(|(x, y)| x * y)
-                        .fold(0.0, |acc, x| acc + x);
-                }
-                output.push(patch_sum);
-            }
-        }
-        output
+        let data = stack(input, self.dim_in);
+        let result = convolution(&data, &self.a, self.padding, self.stride);
+        unstack(&result)
     }
 
     fn back(&self, output: &[f64], error: &[f64]) -> (Vec<Vec<f64>>, Vec<f64>, Vec<f64>) {
@@ -333,7 +362,7 @@ impl Layer for ConvolutionLayer {
 #[test]
 fn test_convlayer_forward() {
     let input = vec![1.0, 2.0, 2.0, 1.0, 1.5, 2.5, 2.5, 1.5, 1.0, 2.0, 2.0, 1.0];
-    let mut conv = ConvolutionLayer::new((3, 4), (2, 3), (2, 2), Function::ReLU);
+    let mut conv = ConvolutionLayer::new((3, 4), (2, 3), (2, 2), (0, 0), (1, 1), Function::ReLU);
     conv.a = Vec::new();
     conv.a.push(vec![1.0, 1.0]);
     conv.a.push(vec![1.0, 1.0]);
