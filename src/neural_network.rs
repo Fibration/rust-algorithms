@@ -275,6 +275,7 @@ struct ConvolutionLayer {
     padding: (usize, usize),
     stride: (usize, usize),
     a: Vec<Vec<f64>>,
+    b: f64,
     cap: Function,
 }
 
@@ -304,6 +305,7 @@ impl ConvolutionLayer {
                         .collect()
                 })
                 .collect(),
+            b: 0.0,
             cap,
         }
     }
@@ -351,7 +353,8 @@ impl Layer for ConvolutionLayer {
     fn forward(&self, input: &[f64]) -> Vec<f64> {
         let data = stack(input, self.dim_in);
         let result = convolution(&data, &self.a, self.padding, self.stride);
-        unstack(&result)
+        let output: Vec<f64> = unstack(&result).iter().map(|x| x + self.b).collect();
+        (self.cap).activation()(&output[..])
     }
 
     fn back(&self, output: &[f64], error: &[f64]) -> (Vec<Vec<f64>>, Vec<f64>, Vec<f64>) {
