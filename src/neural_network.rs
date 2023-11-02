@@ -347,6 +347,42 @@ fn unstack(matrix: &[Vec<f64>]) -> Vec<f64> {
     flat
 }
 
+#[test]
+fn test_pad_right_within() {
+    let mut matrix = Vec::new();
+    matrix.push(vec![1.0, 1.0]);
+    matrix.push(vec![1.0, 1.0]);
+    let mut expected = Vec::new();
+    expected.push(vec![1.0, 0.0, 1.0, 0.0]);
+    expected.push(vec![0.0, 0.0, 0.0, 0.0]);
+    expected.push(vec![1.0, 0.0, 1.0, 0.0]);
+    expected.push(vec![0.0, 0.0, 0.0, 0.0]);
+    assert_eq!(pad_right_within(matrix, (1, 1)), expected);
+}
+
+fn pad_right_within(matrix: Vec<Vec<f64>>, padding: (usize, usize)) -> Vec<Vec<f64>> {
+    let new_row_len = matrix[0].len() * (1 + padding.1);
+    let mut empty = Vec::new();
+    for _ in 0..(new_row_len) {
+        empty.push(0.0);
+    }
+    let mut padded = Vec::new();
+    for i in 0..matrix.len() {
+        let mut padded_row = Vec::new();
+        for j in 0..matrix[0].len() {
+            padded_row.push(matrix[i][j]);
+            for _ in 0..padding.1 {
+                padded_row.push(0.0);
+            }
+        }
+        padded.push(padded_row);
+        for _ in 0..padding.0 {
+            padded.push(empty.clone());
+        }
+    }
+    padded
+}
+
 impl Layer for ConvolutionLayer {
     // TODO implement stride and padding
     // (row, col)
