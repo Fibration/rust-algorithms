@@ -364,13 +364,13 @@ impl Layer for ConvolutionLayer {
 
 #[test]
 fn test_convlayer_forward() {
-    let input = vec![1.0, 2.0, 2.0, 1.0, 1.5, 2.5, 2.5, 1.5, 1.0, 2.0, 2.0, 1.0];
+    let input = vec![-2.0, -3.0, 2.0, 1.0, 1.5, 2.5, 2.5, 1.5, 1.0, 2.0, 2.0, 1.0];
     let mut conv = ConvolutionLayer::new((3, 4), (2, 3), (2, 2), (0, 0), (1, 1), Function::ReLU);
     conv.a = Vec::new();
     conv.a.push(vec![1.0, 1.0]);
     conv.a.push(vec![1.0, 1.0]);
     let result = conv.forward(&input);
-    assert_eq!(result, [7.0, 9.0, 7.0, 7.0, 9.0, 7.0]);
+    assert_eq!(result, [0.0, 4.0, 7.0, 7.0, 9.0, 7.0]);
 }
 
 #[test]
