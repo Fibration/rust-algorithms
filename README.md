@@ -4,6 +4,22 @@ Implementing CS and ML algorithms in Rust.
 
 A list to work through.
 
+- Linear NN
+- CNN
+- RNN
+- LSTM
+- YOLO
+- Transformer
+- Variational Autoencoder VAE
+- Encode-decode GAN
+- Diffusion
+- Actor-Critic
+- DQN
+- SARSA
+- DDPG
+- TRPO
+- PPO
+
 - binary search
 - depth-first search
 - breadth-first search
