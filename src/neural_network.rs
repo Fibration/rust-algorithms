@@ -383,6 +383,71 @@ fn pad_right_within(matrix: Vec<Vec<f64>>, padding: (usize, usize)) -> Vec<Vec<f
     padded
 }
 
+#[test]
+fn test_pad_around() {
+    let mut matrix = Vec::new();
+    matrix.push(vec![1.0, 1.0]);
+    matrix.push(vec![1.0, 1.0]);
+    let mut expected = Vec::new();
+    expected.push(vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+    expected.push(vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+    expected.push(vec![0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0]);
+    expected.push(vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+    expected.push(vec![0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0]);
+    expected.push(vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+    expected.push(vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+    assert_eq!(pad_around(matrix, (2, 2), (1, 1)), expected);
+}
+
+fn pad_around(
+    matrix: Vec<Vec<f64>>,
+    padding: (usize, usize),
+    dilation: (usize, usize),
+) -> Vec<Vec<f64>> {
+    let new_row_len = padding.1 * 2 + matrix[0].len() + (matrix[0].len() - 1) * dilation.1;
+    let mut empty = Vec::new();
+    for _ in 0..(new_row_len) {
+        empty.push(0.0);
+    }
+    let mut padded = Vec::new();
+    for _ in 0..padding.0 {
+        padded.push(empty.clone());
+    }
+    for i in 0..matrix.len() {
+        let mut padded_row = Vec::new();
+        // pad the left
+        for _ in 0..padding.1 {
+            padded_row.push(0.0);
+        }
+        for j in 0..(matrix[0].len() - 1) {
+            // add column and then dilation
+            padded_row.push(matrix[i][j]);
+            for _ in 0..dilation.1 {
+                padded_row.push(0.0);
+            }
+        }
+        // add final column entry
+        padded_row.push(matrix[i][matrix[0].len() - 1]);
+        // pad the right
+        for _ in 0..padding.1 {
+            padded_row.push(0.0);
+        }
+        padded.push(padded_row);
+        // dilate next row unless last row
+        if i < matrix.len() - 1 {
+            for _ in 0..dilation.0 {
+                padded.push(empty.clone());
+            }
+        }
+    }
+
+    for _ in 0..padding.0 {
+        padded.push(empty.clone());
+    }
+
+    padded
+}
+
 impl Layer for ConvolutionLayer {
     // TODO implement stride and padding
     // (row, col)
@@ -393,8 +458,26 @@ impl Layer for ConvolutionLayer {
         (self.cap).activation()(&output[..])
     }
 
-    fn back(&self, output: &[f64], error: &[f64]) -> (Vec<Vec<f64>>, Vec<f64>, Vec<f64>) {
-        (todo!(), todo!(), todo!())
+    fn back(&self, input: &[f64], error: &[f64]) -> (Vec<Vec<f64>>, Vec<f64>, Vec<f64>) {
+        let input_matrix = stack(input, self.dim_in);
+        let mut error_matrix = stack(error, self.dim_out);
+        if self.stride.0 > 1 || self.stride.1 > 1 {
+            error_matrix = pad_right_within(error_matrix, (self.stride.0 - 1, self.stride.1 - 1));
+        }
+        let partial = convolution(&input_matrix, &error_matrix, self.padding, (1, 1));
+        let delta_bias =
+            error.iter().fold(0.0, |acc, x| acc + x) / (self.dim_out.0 * self.dim_out.1) as f64;
+        let new_error = convolution(
+            &pad_around(
+                error_matrix,
+                (self.kernel.0 - 1, self.kernel.1 - 1),
+                (self.stride.0 - 1, self.stride.1 - 1),
+            ),
+            &self.a,
+            (0, 0),
+            (1, 1),
+        );
+        (partial, vec![delta_bias], unstack(&new_error))
     }
 }
 
@@ -407,6 +490,23 @@ fn test_convlayer_forward() {
     conv.a.push(vec![1.0, 1.0]);
     let result = conv.forward(&input);
     assert_eq!(result, [0.0, 4.0, 7.0, 7.0, 9.0, 7.0]);
+}
+
+#[test]
+fn test_convlayer_back() {
+    let mut conv = ConvolutionLayer::new((3, 4), (2, 3), (2, 2), (0, 0), (1, 1), Function::ReLU);
+    conv.a = Vec::new();
+    conv.a.push(vec![1.0, 1.0]);
+    conv.a.push(vec![1.0, 1.0]);
+    let input = vec![-2.0, -3.0, 2.0, 1.0, 1.5, 2.5, 2.5, 1.5, 1.0, 2.0, 2.0, 1.0];
+    let output = vec![0.0, 4.0, 7.0, 7.0, 9.0, 7.0];
+    let error = vec![0.0, 1.0, 2.0, 1.0, 1.0, 1.0];
+    let back = conv.back(&input, &error);
+    let expected_partial = stack(&[7.5, 10.5,12.5, 10.5], (2,2));
+    let expected_error = [0.0, 1.0, 3.0, 2.0, 1.0, 3.0, 5.0, 3.0, 1.0, 2.0, 2.0, 1.0];
+    assert_eq!(back.0, expected_partial);
+    assert_eq!(back.1, [1.0]);
+    assert_eq!(back.2, expected_error);
 }
 
 #[test]
