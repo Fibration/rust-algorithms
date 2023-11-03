@@ -1,90 +1,25 @@
-use rand_distr::{num_traits::Float, Distribution, Normal};
-use std::{
-    array,
-    fmt::{self, Debug},
-};
+use rand_distr::{Distribution, Normal};
+use std::fmt::{self, Debug};
 
-trait Activation {
+pub trait Activation {
     fn activation(&self) -> fn(&[f64]) -> Vec<f64>;
 }
 
-trait Derivative {
+pub trait Derivative {
     fn derivative(&self) -> fn(&[f64], &[f64]) -> Vec<f64>;
 }
 
-trait Layer {
+pub trait Loss {
+    fn loss(&self) -> Option<fn(&[f64], &[f64]) -> f64>;
+}
+
+pub trait Layer {
     fn forward(&self, input: &[f64]) -> Vec<f64>;
     fn back(&self, output: &[f64], error: &[f64]) -> (Vec<Vec<f64>>, Vec<f64>, Vec<f64>);
 }
 
 #[derive(Clone, Copy)]
-enum ActivationFunction {
-    ReLU,
-}
-
-impl Activation for ActivationFunction {
-    fn activation(&self) -> fn(&[f64]) -> Vec<f64> {
-        match self {
-            Self::ReLU => |x| {
-                x.iter()
-                    .map(|xi| if *xi > 0.0 { *xi } else { 0.0 })
-                    .collect()
-            },
-        }
-    }
-}
-
-impl Derivative for ActivationFunction {
-    fn derivative(&self) -> fn(&[f64], &[f64]) -> Vec<f64> {
-        match self {
-            Self::ReLU => |x, y| {
-                x.iter()
-                    .zip(y.iter())
-                    .map(|(xi, yi)| if *xi > 0.0 { *yi } else { 0.0 })
-                    .collect()
-            },
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
-enum LossFunction {
-    CrossEntropy,
-}
-
-impl LossFunction {
-    fn loss(&self) -> fn(&[f64], &[f64]) -> f64 {
-        match self {
-            Self::CrossEntropy => |x, y| {
-                x.iter()
-                    .zip(y.iter())
-                    .map(|(xi, yi)| xi * yi.ln())
-                    .fold(0.0, |acc, z| acc + z)
-                    / (x.len() as f64)
-            },
-        }
-    }
-}
-impl Activation for LossFunction {
-    fn activation(&self) -> fn(&[f64]) -> Vec<f64> {
-        match self {
-            Self::CrossEntropy => |x: &[f64]| {
-                let denom = x.iter().map(|y| y.exp()).fold(0.0, |acc, y| acc + y);
-                x.iter().map(|y| y.exp() / denom).collect()
-            },
-        }
-    }
-}
-
-impl Derivative for LossFunction {
-    fn derivative(&self) -> fn(&[f64], &[f64]) -> Vec<f64> {
-        match self {
-            Self::CrossEntropy => |x, y| x.iter().zip(y.iter()).map(|(xi, yi)| *yi - *xi).collect(),
-        }
-    }
-}
-#[derive(Clone, Copy)]
-enum Function {
+pub enum Function {
     ReLU,
     CrossEntropy,
 }
@@ -119,7 +54,22 @@ impl Derivative for Function {
     }
 }
 
-struct NeuralNetworkLayer {
+impl Loss for Function {
+    fn loss(&self) -> Option<fn(&[f64], &[f64]) -> f64> {
+        match self {
+            Self::CrossEntropy => Some(|x, y| {
+                x.iter()
+                    .zip(y.iter())
+                    .map(|(xi, yi)| xi * yi.ln())
+                    .fold(0.0, |acc, z| acc + z)
+                    / (x.len() as f64)
+            }),
+            Self::ReLU => None,
+        }
+    }
+}
+
+pub struct NeuralNetworkLayer {
     dim_in: u32,
     dim_out: u32,
     a: Vec<Vec<f64>>,
@@ -236,7 +186,7 @@ fn test_neural_network_layer_back() {
     assert_eq!(back_result.2.len() as u32, nn.dim_in);
 }
 
-fn linear_nn(dim: &[u32], activation: Function, loss: Function) -> Vec<NeuralNetworkLayer> {
+pub fn linear_nn(dim: &[u32], activation: Function, loss: Function) -> Vec<NeuralNetworkLayer> {
     let mut nn: Vec<NeuralNetworkLayer> = dim[..(dim.len() - 1)]
         .iter()
         .zip(dim[1..].iter())
@@ -268,7 +218,7 @@ fn test_linear_nn() {
     assert_eq!(linear[1].dim_out, linear[2].dim_in);
 }
 
-struct ConvolutionLayer {
+pub struct ConvolutionLayer {
     dim_in: (usize, usize),
     dim_out: (usize, usize),
     kernel: (usize, usize),
@@ -499,10 +449,9 @@ fn test_convlayer_back() {
     conv.a.push(vec![1.0, 1.0]);
     conv.a.push(vec![1.0, 1.0]);
     let input = vec![-2.0, -3.0, 2.0, 1.0, 1.5, 2.5, 2.5, 1.5, 1.0, 2.0, 2.0, 1.0];
-    let output = vec![0.0, 4.0, 7.0, 7.0, 9.0, 7.0];
     let error = vec![0.0, 1.0, 2.0, 1.0, 1.0, 1.0];
     let back = conv.back(&input, &error);
-    let expected_partial = stack(&[7.5, 10.5,12.5, 10.5], (2,2));
+    let expected_partial = stack(&[7.5, 10.5, 12.5, 10.5], (2, 2));
     let expected_error = [0.0, 1.0, 3.0, 2.0, 1.0, 3.0, 5.0, 3.0, 1.0, 2.0, 2.0, 1.0];
     assert_eq!(back.0, expected_partial);
     assert_eq!(back.1, [1.0]);
