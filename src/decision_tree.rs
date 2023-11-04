@@ -1,3 +1,4 @@
+use rand_distr::num_traits::Float;
 use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
 
@@ -21,12 +22,15 @@ fn test_entropy() {
     );
 }
 
-fn entropy<T: Eq + Hash>(labels: Vec<T>) -> f32 {
+fn entropy<T: Eq + Hash + Clone>(labels: Vec<T>) -> f32 {
     let total = labels.len() as f32;
     let mut unique_labels = HashMap::<T, u32>::new();
     let mut ent = 0.0;
     for x in labels {
-        unique_labels.insert(x, *(unique_labels.get(&x).unwrap_or_else(|| &0)) + 1);
+        unique_labels.insert(
+            x.clone(),
+            *(unique_labels.get(&x).unwrap_or_else(|| &0)) + 1,
+        );
     }
     for key in unique_labels.keys() {
         let prob = *unique_labels.get(key).unwrap() as f32 / total;
@@ -69,7 +73,7 @@ fn test_information_gain() {
     );
 }
 
-fn information_gain<T: Eq + Hash>(pop1: Vec<T>, pop2: Vec<Vec<T>>) -> f32 {
+fn information_gain<T: Eq + Hash + Clone>(pop1: Vec<T>, pop2: Vec<Vec<T>>) -> f32 {
     let mut new_entropies = 0.0;
     for x in pop2 {
         new_entropies += (x.len() as f32 / pop1.len() as f32) * entropy(x)
@@ -99,7 +103,7 @@ fn id3(sample: Vec<f32>, tree: DecisionTree) -> f32 {
         if let Some(z) = split.2 {
             return z;
         } else {
-            let children = DecisionTree.get_children(current_node.clone());
+            let children = tree.get_children(current_node.clone());
             if sample[split.0 as usize] <= split.1 {
                 current_node = children.0;
             } else {
@@ -107,6 +111,11 @@ fn id3(sample: Vec<f32>, tree: DecisionTree) -> f32 {
             }
         }
     }
+}
+
+fn get_split_point<T: Copy + Ord>(data: &mut [T]) -> T {
+    data.sort();
+    data[data.len() / 2]
 }
 
 #[test]
@@ -156,7 +165,10 @@ fn id3_train(data: Vec<Vec<f32>>) -> DecisionTree {
         let children = tree.get_children(parent.clone());
         unexpanded.push_back(children.0);
         unexpanded.push_back(children.1);
+        let mut best_ig = 0.0;
+        let mut best_ig_field = 0;
         for field in 0..data[0].len() {}
+        // fields.iter().map(|x| information_gain())
     }
 
     DecisionTree::from(vec![
