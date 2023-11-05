@@ -1,3 +1,4 @@
+pub mod cnn;
 pub mod conv_layer;
 mod test;
 pub mod utilities;
