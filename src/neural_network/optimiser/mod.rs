@@ -10,19 +10,19 @@ fn SGD(
 
     // run forwards
     let mut forwards = Vec::new();
-    for layer in network {
+    for j in 0..network.len() {
         let layer_results: Vec<Vec<f64>> = (0..data.len())
             .collect::<Vec<_>>()
             .iter()
-            .map(|i| layer.forward(&data[*i]))
+            .map(|i| network[j].forward(&data[*i]))
             .collect();
         forwards.push(layer_results);
     }
 
     // calculate loss
-    let mut loss = 0.0;
+    let mut _loss = 0.0;
     for i in 0..labels.len() {
-        loss += match network[network.len()].cap().loss() {
+        _loss += match network[network.len()].cap().loss() {
             Some(f) => f(&forwards[forwards.len()][i], &labels[i]),
             None => 0.0,
         };
@@ -38,18 +38,18 @@ fn SGD(
             .iter()
             .map(|j| network[i].back(&forwards[i][*j], &error[*j]))
             .collect();
-        error = result.iter().map(|x| x.2).collect();
+        error = result.iter().map(|x| x.2.clone()).collect();
 
         backwards.push(
             result
                 .iter()
-                .map(|x| x.0)
+                .map(|x| x.0.clone())
                 .fold(Vec::new(), |acc, x| add(x, acc)),
         );
         bias.push(
             result
                 .iter()
-                .map(|x| x.1)
+                .map(|x| x.1.clone())
                 .fold(Vec::new(), |acc, x| vector_add(x, acc)),
         );
     }
