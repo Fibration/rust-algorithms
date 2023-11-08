@@ -1,15 +1,20 @@
 use std::collections::HashMap;
 
-use crate::neural_network::core::{stack, unstack, Layer};
+use crate::neural_network::core::{stack, unstack, Function, Layer};
 
 use super::ConvolutionLayer;
 
+#[derive(Clone)]
 struct CNNLayer {
     num_in: usize,
     filters: Vec<ConvolutionLayer>,
 }
 
 impl Layer for CNNLayer {
+    fn cap(&self) -> Function {
+        self.filters[0].cap
+    }
+
     fn forward(&self, input: &[f64]) -> Vec<f64> {
         let inputs = stack(input, (self.num_in, input.len() / self.num_in));
         let mut outputs = Vec::new();

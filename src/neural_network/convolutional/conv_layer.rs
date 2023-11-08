@@ -4,6 +4,7 @@ use crate::neural_network::core::{stack, unstack, Activation, Function, Layer};
 
 use super::convolution;
 
+#[derive(Clone)]
 pub struct ConvolutionLayer {
     pub dim_in: (usize, usize),
     pub dim_out: (usize, usize),
@@ -11,7 +12,7 @@ pub struct ConvolutionLayer {
     pub padding: (usize, usize),
     pub stride: (usize, usize),
     pub a: Vec<Vec<f64>>,
-    pub b: f64,
+    pub b: Vec<f64>,
     pub cap: Function,
 }
 
@@ -41,7 +42,7 @@ impl ConvolutionLayer {
                         .collect()
                 })
                 .collect(),
-            b: 0.0,
+            b: vec![0.0],
             cap,
         }
     }
@@ -120,12 +121,15 @@ pub fn pad_around(
 }
 
 impl Layer for ConvolutionLayer {
-    // TODO implement stride and padding
+    fn cap(&self) -> Function {
+        self.cap
+    }
+
     // (row, col)
     fn forward(&self, input: &[f64]) -> Vec<f64> {
         let data = stack(input, self.dim_in);
         let result = convolution(&data, &self.a, self.padding, self.stride);
-        let output: Vec<f64> = unstack(&result).iter().map(|x| x + self.b).collect();
+        let output: Vec<f64> = unstack(&result).iter().map(|x| x + self.b[0]).collect();
         (self.cap).activation()(&output[..])
     }
 

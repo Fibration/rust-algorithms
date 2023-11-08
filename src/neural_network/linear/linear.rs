@@ -4,6 +4,7 @@ use super::super::core::{Activation, Derivative, Layer};
 use rand_distr::{Distribution, Normal};
 use std::fmt::{self, Debug};
 
+#[derive(Clone)]
 pub struct NeuralNetworkLayer {
     pub dim_in: u32,
     pub dim_out: u32,
@@ -38,6 +39,10 @@ impl NeuralNetworkLayer {
     }
 }
 impl Layer for NeuralNetworkLayer {
+    fn cap(&self) -> Function {
+        self.cap
+    }
+
     fn forward(&self, input: &[f64]) -> Vec<f64> {
         let linear: Vec<f64> = (0..self.dim_out as usize)
             .collect::<Vec<_>>()
