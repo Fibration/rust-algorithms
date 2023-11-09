@@ -4,10 +4,7 @@ fn SGD(
     network: Vec<impl Layer>,
     data: &[Vec<f64>],
     labels: &[Vec<f64>],
-    learning_rate: f64,
 ) -> (Vec<Vec<Vec<f64>>>, Vec<Vec<f64>>) {
-    let mut updated = network.clone();
-
     // run forwards
     let mut forwards = Vec::new();
     for j in 0..network.len() {
@@ -83,4 +80,86 @@ fn vector_add(a: Vec<f64>, b: Vec<f64>) -> Vec<f64> {
         c.push(a[i] + b[i]);
     }
     c
+}
+
+fn divide(a: Vec<Vec<f64>>, b: Vec<Vec<f64>>, scalar: Option<f64>) -> Vec<Vec<f64>> {
+    let mut c = Vec::new();
+    // HACKY
+    if b.len() == 0 {
+        return a;
+    }
+    let _scalar = match scalar {
+        Some(x) => x,
+        None => 1.0,
+    };
+    for i in 0..a.len() {
+        let mut row = Vec::new();
+        for j in 0..a[0].len() {
+            row.push(_scalar * a[i][j] / b[i][j]);
+        }
+        c.push(row);
+    }
+    c
+}
+
+fn rmsprop(
+    network: Vec<impl Layer>,
+    data: &[Vec<f64>],
+    labels: &[Vec<f64>],
+    averages: (&[Vec<Vec<f64>>], &[Vec<f64>]),
+    learning_rate: f64,
+) -> (
+    Vec<Vec<Vec<f64>>>,
+    Vec<Vec<f64>>,
+    Vec<Vec<Vec<f64>>>,
+    Vec<Vec<f64>>,
+) {
+    let sgd_results = SGD(network, data, labels);
+    let square_grad: Vec<Vec<Vec<f64>>> = sgd_results
+        .0
+        .iter()
+        .map(|x| {
+            x.iter()
+                .map(|y| y.iter().map(|z| 0.1 * z * z).collect())
+                .collect()
+        })
+        .collect();
+    let square_bias: Vec<Vec<f64>> = sgd_results
+        .1
+        .iter()
+        .map(|x| x.iter().map(|y| 0.1 * y * y).collect())
+        .collect();
+
+    let new_grad_average: Vec<Vec<Vec<f64>>> = averages
+        .0
+        .iter()
+        .enumerate()
+        .map(|(i, x)| {
+            add(
+                x.clone()
+                    .iter()
+                    .map(|y| y.iter().map(|z| 0.9 * z).collect())
+                    .collect(),
+                square_grad[i].clone(),
+            )
+        })
+        .collect();
+    let new_bias_average = add(
+        averages
+            .1
+            .to_vec()
+            .iter()
+            .map(|y| y.iter().map(|z| 0.9 * z).collect())
+            .collect(),
+        square_bias,
+    );
+    let mut grad = sgd_results
+        .0
+        .iter()
+        .enumerate()
+        .map(|(i, x)| divide(x.to_vec(), new_grad_average[i].clone(), Some(learning_rate)))
+        .collect();
+    let mut bias = divide(sgd_results.1, new_bias_average.clone(), Some(learning_rate));
+
+    (grad, bias, new_grad_average, new_bias_average)
 }
