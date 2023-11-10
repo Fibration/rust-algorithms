@@ -153,13 +153,13 @@ fn rmsprop(
             .collect(),
         square_bias,
     );
-    let mut grad = sgd_results
+    let  grad = sgd_results
         .0
         .iter()
         .enumerate()
         .map(|(i, x)| divide(x.to_vec(), new_grad_average[i].clone(), Some(learning_rate)))
         .collect();
-    let mut bias = divide(sgd_results.1, new_bias_average.clone(), Some(learning_rate));
+    let bias = divide(sgd_results.1, new_bias_average.clone(), Some(learning_rate));
 
     (grad, bias, new_grad_average, new_bias_average)
 }
