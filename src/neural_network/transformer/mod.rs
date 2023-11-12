@@ -46,3 +46,35 @@ fn matmul(
     }
     result
 }
+
+fn attention_naive(q: Vec<f32>, k: Vec<f32>, v: Vec<f32>) -> Vec<f32> {
+    let value = q
+        .iter()
+        .zip(k.iter())
+        .map(|(x, y)| x * y)
+        .fold(0.0, |acc, x| acc + x)
+        / (k.len() as f32).sqrt();
+    v.iter().map(|x| x * value).collect()
+}
+
+#[test]
+fn test_linear_transform() {
+    let a = vec![
+        vec![1.0, 0.0, 0.0],
+        vec![0.0, 1.0, 0.0],
+        vec![0.0, 0.0, 1.0],
+    ];
+    let x = vec![2.0, 3.0, 5.0];
+    assert_eq!(linear_transform(&a, &x), x);
+}
+
+fn linear_transform(a: &[Vec<f32>], x: &[f32]) -> Vec<f32> {
+    a.iter()
+        .map(|y| {
+            y.iter()
+                .zip(x.iter())
+                .map(|(z, w)| z * w)
+                .fold(0.0, |acc, y| acc + y)
+        })
+        .collect()
+}
