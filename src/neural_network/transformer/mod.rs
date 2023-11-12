@@ -9,13 +9,22 @@
 fn test_matmul_t() {
     let a = vec![vec![1.0, 2.0], vec![2.0, 3.0]];
     let b = vec![vec![2.0, 2.0], vec![1.0, 4.0]];
-    let d = matmul_t(a, b);
+    let d = matmul(a, b, None, true);
     let expected = vec![vec![6.0, 9.0], vec![10.0, 14.0]];
     assert_eq!(d, expected);
 }
 
-fn matmul_t(a: Vec<Vec<f64>>, b: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+fn matmul(
+    a: Vec<Vec<f32>>,
+    b: Vec<Vec<f32>>,
+    scalar: Option<f32>,
+    transpose: bool,
+) -> Vec<Vec<f32>> {
     let mut result = Vec::new();
+    let c = match scalar {
+        Some(x) => x,
+        None => 1.0,
+    };
     for i in 0..a.len() {
         let mut row = Vec::new();
         for j in 0..b.len() {
@@ -23,7 +32,13 @@ fn matmul_t(a: Vec<Vec<f64>>, b: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
                 (0..a[0].len())
                     .collect::<Vec<_>>()
                     .iter()
-                    .map(|k| a[i][*k] * b[j][*k])
+                    .map(|k| {
+                        if transpose {
+                            c * a[i][*k] * b[j][*k]
+                        } else {
+                            c * a[i][*k] * b[*k][j]
+                        }
+                    })
                     .fold(0.0, |acc, x| acc + x),
             )
         }
