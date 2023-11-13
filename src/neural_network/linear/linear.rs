@@ -44,19 +44,17 @@ impl Layer for NeuralNetworkLayer {
     }
 
     fn forward(&self, input: &[f64]) -> Vec<f64> {
-        let linear: Vec<f64> = (0..self.dim_out as usize)
-            .collect::<Vec<_>>()
+        let linear: Vec<f64> = (self.a)
             .iter()
-            .map(|i| {
-                &input
-                    .iter()
-                    .enumerate()
-                    .map(|(j, x)| self.a[*i][j] * x)
-                    .fold(0.0, |acc, y| acc + y)
-                    + self.b[*i]
+            .zip((self.b).iter())
+            .map(|(row, b)| {
+                row.iter()
+                    .zip(input.iter())
+                    .map(|(x, y)| x * y)
+                    .fold(0.0, |acc, x| acc + x)
+                    + b
             })
             .collect();
-
         (self.cap).activation()(&linear[..])
     }
 
