@@ -51,7 +51,7 @@ impl Layer for NeuralNetworkLayer {
                 row.iter()
                     .zip(input.iter())
                     .map(|(x, y)| x * y)
-                    .fold(0.0, |acc, x| acc + x)
+                    .sum::<f64>()
                     + b
             })
             .collect();
