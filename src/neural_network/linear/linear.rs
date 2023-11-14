@@ -62,21 +62,15 @@ impl Layer for NeuralNetworkLayer {
         let res = self.cap.derivative()(error, output);
         let partial: Vec<Vec<f64>> = (self.a)
             .iter()
-            .enumerate()
-            .map(|(j, row)| row.iter().map(|x| x * res[j]).collect())
+            .zip(res.iter())
+            .map(|(row, z)| row.iter().map(|x| x * z).collect())
             .collect();
-        let bias: Vec<f64> = self.b.iter().enumerate().map(|(i, x)| x * res[i]).collect();
-        let new_error = (0..(self.dim_in) as usize)
-            .collect::<Vec<_>>()
+        let bias: Vec<f64> = self.b.iter().zip(res.iter()).map(|(x, y)| x * y).collect();
+        let new_error: Vec<f64> = partial
             .iter()
-            .map(|i| {
-                (0..(self.dim_out) as usize)
-                    .collect::<Vec<_>>()
-                    .iter()
-                    .map(|j| partial[*j][*i])
-                    .fold(0.0, |acc, x| acc + x)
-            })
-            .collect();
+            .map(|x| x.to_vec())
+            .reduce(|acc, x| x.iter().zip(acc.iter()).map(|(y, z)| y + z).collect())
+            .unwrap();
         (partial, bias, new_error)
     }
 }
