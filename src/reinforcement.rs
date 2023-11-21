@@ -8,7 +8,6 @@ fn test_bandit() {
     let mut result: usize;
     (result, history) = bandit((0, 0.0), &history, 0.1, None);
     assert_eq!(result, 0);
-    (result, history) = bandit((0, -1.0), &history, 0.1, None);
     (result, _) = bandit((0, -0.5), &history, 0.1, None);
     assert_ne!(result, 0);
 }
@@ -19,8 +18,18 @@ fn bandit(
     alpha: f32,
     seed: Option<ChaCha8Rng>,
 ) -> (usize, Vec<f32>) {
-    let mut book: Vec<f32> = history.to_vec();
-    book[result.0] = 0.9 * book[result.0] + 0.1 * result.1;
+    let book: Vec<f32> = history
+        .iter()
+        .enumerate()
+        .map(|(i, x)| {
+            if i == result.0 {
+                0.9 * x + 0.1 * result.1
+            } else {
+                *x
+            }
+        })
+        .collect();
+
     let mut rng = match seed {
         Some(x) => x,
         None => ChaCha8Rng::seed_from_u64(1),
