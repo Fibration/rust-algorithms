@@ -1,10 +1,9 @@
-
 pub fn convolution(
-    data: &[Vec<f64>],
-    filter: &[Vec<f64>],
+    data: &[Vec<f32>],
+    filter: &[Vec<f32>],
     padding: (usize, usize),
     stride: (usize, usize),
-) -> Vec<Vec<f64>> {
+) -> Vec<Vec<f32>> {
     let mut padded = Vec::new();
     for _ in 0..padding.0 {
         let mut row = Vec::new();

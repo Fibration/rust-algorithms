@@ -1,2 +1,2 @@
-mod linear;
+pub mod linear;
 mod test;

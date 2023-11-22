@@ -7,9 +7,9 @@ pub enum Function {
 }
 
 impl Activation for Function {
-    fn activation(&self) -> fn(&[f64]) -> Vec<f64> {
+    fn activation(&self) -> fn(&[f32]) -> Vec<f32> {
         match self {
-            Self::CrossEntropy => |x: &[f64]| {
+            Self::CrossEntropy => |x: &[f32]| {
                 let denom = x.iter().map(|y| y.exp()).fold(0.0, |acc, y| acc + y);
                 x.iter().map(|y| y.exp() / denom).collect()
             },
@@ -23,7 +23,7 @@ impl Activation for Function {
 }
 
 impl Derivative for Function {
-    fn derivative(&self) -> fn(&[f64], &[f64]) -> Vec<f64> {
+    fn derivative(&self) -> fn(&[f32], &[f32]) -> Vec<f32> {
         match self {
             Self::CrossEntropy => |x, y| x.iter().zip(y.iter()).map(|(xi, yi)| *yi - *xi).collect(),
             Self::ReLU => |x, y| {
@@ -37,14 +37,14 @@ impl Derivative for Function {
 }
 
 impl Loss for Function {
-    fn loss(&self) -> Option<fn(&[f64], &[f64]) -> f64> {
+    fn loss(&self) -> Option<fn(&[f32], &[f32]) -> f32> {
         match self {
             Self::CrossEntropy => Some(|x, y| {
                 x.iter()
                     .zip(y.iter())
                     .map(|(xi, yi)| xi * yi.ln())
                     .fold(0.0, |acc, z| acc + z)
-                    / (x.len() as f64)
+                    / (x.len() as f32)
             }),
             Self::ReLU => None,
         }

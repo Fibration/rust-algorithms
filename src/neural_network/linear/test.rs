@@ -44,10 +44,10 @@ mod test_linear {
     #[test]
     fn test_linear_nn() {
         let linear = linear_nn(&[16, 8, 4, 2], Function::ReLU, Function::CrossEntropy);
-        let input: Vec<f64> = (0..16)
+        let input: Vec<f32> = (0..16)
             .collect::<Vec<_>>()
             .iter()
-            .map(|x| *x as f64)
+            .map(|x| *x as f32)
             .collect();
         let result = linear[2].forward(&linear[1].forward(&linear[0].forward(&input[..])[..])[..]);
         println!("{result:?}");

@@ -8,8 +8,8 @@ use std::fmt::{self, Debug};
 pub struct NeuralNetworkLayer {
     pub dim_in: u32,
     pub dim_out: u32,
-    pub a: Vec<Vec<f64>>,
-    pub b: Vec<f64>,
+    pub a: Vec<Vec<f32>>,
+    pub b: Vec<f32>,
     pub cap: Function,
 }
 
@@ -43,30 +43,30 @@ impl Layer for NeuralNetworkLayer {
         self.cap
     }
 
-    fn forward(&self, input: &[f64]) -> Vec<f64> {
-        let linear: Vec<f64> = (self.a)
+    fn forward(&self, input: &[f32]) -> Vec<f32> {
+        let linear: Vec<f32> = (self.a)
             .iter()
             .zip((self.b).iter())
             .map(|(row, b)| {
                 row.iter()
                     .zip(input.iter())
                     .map(|(x, y)| x * y)
-                    .sum::<f64>()
+                    .sum::<f32>()
                     + b
             })
             .collect();
         (self.cap).activation()(&linear[..])
     }
 
-    fn back(&self, output: &[f64], error: &[f64]) -> (Vec<Vec<f64>>, Vec<f64>, Vec<f64>) {
+    fn back(&self, output: &[f32], error: &[f32]) -> (Vec<Vec<f32>>, Vec<f32>, Vec<f32>) {
         let res = self.cap.derivative()(error, output);
-        let partial: Vec<Vec<f64>> = (self.a)
+        let partial: Vec<Vec<f32>> = (self.a)
             .iter()
             .zip(res.iter())
             .map(|(row, z)| row.iter().map(|x| x * z).collect())
             .collect();
-        let bias: Vec<f64> = self.b.iter().zip(res.iter()).map(|(x, y)| x * y).collect();
-        let new_error: Vec<f64> = partial
+        let bias: Vec<f32> = self.b.iter().zip(res.iter()).map(|(x, y)| x * y).collect();
+        let new_error: Vec<f32> = partial
             .iter()
             .map(|x| x.to_vec())
             .reduce(|acc, x| x.iter().zip(acc.iter()).map(|(y, z)| y + z).collect())

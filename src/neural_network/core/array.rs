@@ -1,4 +1,4 @@
-pub fn stack(flat: &[f64], dim: (usize, usize)) -> Vec<Vec<f64>> {
+pub fn stack(flat: &[f32], dim: (usize, usize)) -> Vec<Vec<f32>> {
     let mut stacked = Vec::new();
     for i in 0..dim.0 {
         let mut row = Vec::new();
@@ -10,7 +10,7 @@ pub fn stack(flat: &[f64], dim: (usize, usize)) -> Vec<Vec<f64>> {
     stacked
 }
 
-pub fn unstack(matrix: &[Vec<f64>]) -> Vec<f64> {
+pub fn unstack(matrix: &[Vec<f32>]) -> Vec<f32> {
     let mut flat = Vec::new();
     for i in 0..matrix.len() {
         for j in 0..matrix[0].len() {

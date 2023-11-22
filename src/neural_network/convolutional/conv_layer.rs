@@ -11,8 +11,8 @@ pub struct ConvolutionLayer {
     pub kernel: (usize, usize),
     pub padding: (usize, usize),
     pub stride: (usize, usize),
-    pub a: Vec<Vec<f64>>,
-    pub b: Vec<f64>,
+    pub a: Vec<Vec<f32>>,
+    pub b: Vec<f32>,
     pub cap: Function,
 }
 
@@ -48,7 +48,7 @@ impl ConvolutionLayer {
     }
 }
 
-pub fn pad_right_within(matrix: Vec<Vec<f64>>, padding: (usize, usize)) -> Vec<Vec<f64>> {
+pub fn pad_right_within(matrix: Vec<Vec<f32>>, padding: (usize, usize)) -> Vec<Vec<f32>> {
     let new_row_len = matrix[0].len() * (1 + padding.1);
     let mut empty = Vec::new();
     for _ in 0..(new_row_len) {
@@ -72,10 +72,10 @@ pub fn pad_right_within(matrix: Vec<Vec<f64>>, padding: (usize, usize)) -> Vec<V
 }
 
 pub fn pad_around(
-    matrix: Vec<Vec<f64>>,
+    matrix: Vec<Vec<f32>>,
     padding: (usize, usize),
     dilation: (usize, usize),
-) -> Vec<Vec<f64>> {
+) -> Vec<Vec<f32>> {
     let new_row_len = padding.1 * 2 + matrix[0].len() + (matrix[0].len() - 1) * dilation.1;
     let mut empty = Vec::new();
     for _ in 0..(new_row_len) {
@@ -126,14 +126,14 @@ impl Layer for ConvolutionLayer {
     }
 
     // (row, col)
-    fn forward(&self, input: &[f64]) -> Vec<f64> {
+    fn forward(&self, input: &[f32]) -> Vec<f32> {
         let data = stack(input, self.dim_in);
         let result = convolution(&data, &self.a, self.padding, self.stride);
-        let output: Vec<f64> = unstack(&result).iter().map(|x| x + self.b[0]).collect();
+        let output: Vec<f32> = unstack(&result).iter().map(|x| x + self.b[0]).collect();
         (self.cap).activation()(&output[..])
     }
 
-    fn back(&self, input: &[f64], error: &[f64]) -> (Vec<Vec<f64>>, Vec<f64>, Vec<f64>) {
+    fn back(&self, input: &[f32], error: &[f32]) -> (Vec<Vec<f32>>, Vec<f32>, Vec<f32>) {
         let input_matrix = stack(input, self.dim_in);
         let mut error_matrix = stack(error, self.dim_out);
         if self.stride.0 > 1 || self.stride.1 > 1 {
@@ -141,7 +141,7 @@ impl Layer for ConvolutionLayer {
         }
         let partial = convolution(&input_matrix, &error_matrix, self.padding, (1, 1));
         let delta_bias =
-            error.iter().fold(0.0, |acc, x| acc + x) / (self.dim_out.0 * self.dim_out.1) as f64;
+            error.iter().fold(0.0, |acc, x| acc + x) / (self.dim_out.0 * self.dim_out.1) as f32;
         let new_error = convolution(
             &pad_around(
                 error_matrix,

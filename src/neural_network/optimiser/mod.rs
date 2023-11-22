@@ -2,13 +2,13 @@ use super::core::{Layer, Loss};
 
 fn SGD(
     network: Vec<impl Layer>,
-    data: &[Vec<f64>],
-    labels: &[Vec<f64>],
-) -> (Vec<Vec<Vec<f64>>>, Vec<Vec<f64>>) {
+    data: &[Vec<f32>],
+    labels: &[Vec<f32>],
+) -> (Vec<Vec<Vec<f32>>>, Vec<Vec<f32>>) {
     // run forwards
     let mut forwards = Vec::new();
     for j in 0..network.len() {
-        let layer_results: Vec<Vec<f64>> = (0..data.len())
+        let layer_results: Vec<Vec<f32>> = (0..data.len())
             .collect::<Vec<_>>()
             .iter()
             .map(|i| network[j].forward(&data[*i]))
@@ -30,7 +30,7 @@ fn SGD(
     let mut bias = Vec::new();
     let mut error = Vec::from(labels);
     for i in (0..network.len()).rev() {
-        let result: Vec<(Vec<Vec<f64>>, Vec<f64>, Vec<f64>)> = (0..labels.len())
+        let result: Vec<(Vec<Vec<f32>>, Vec<f32>, Vec<f32>)> = (0..labels.len())
             .collect::<Vec<_>>()
             .iter()
             .map(|j| network[i].back(&forwards[i][*j], &error[*j]))
@@ -54,7 +54,7 @@ fn SGD(
     (backwards, bias)
 }
 
-fn add(a: Vec<Vec<f64>>, b: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+fn add(a: Vec<Vec<f32>>, b: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
     let mut c = Vec::new();
     // HACKY
     if b.len() == 0 {
@@ -70,7 +70,7 @@ fn add(a: Vec<Vec<f64>>, b: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     c
 }
 
-fn vector_add(a: Vec<f64>, b: Vec<f64>) -> Vec<f64> {
+fn vector_add(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
     let mut c = Vec::new();
     // HACKY
     if b.len() == 0 {
@@ -82,7 +82,7 @@ fn vector_add(a: Vec<f64>, b: Vec<f64>) -> Vec<f64> {
     c
 }
 
-fn divide(a: Vec<Vec<f64>>, b: Vec<Vec<f64>>, scalar: Option<f64>) -> Vec<Vec<f64>> {
+fn divide(a: Vec<Vec<f32>>, b: Vec<Vec<f32>>, scalar: Option<f32>) -> Vec<Vec<f32>> {
     let mut c = Vec::new();
     // HACKY
     if b.len() == 0 {
@@ -104,18 +104,18 @@ fn divide(a: Vec<Vec<f64>>, b: Vec<Vec<f64>>, scalar: Option<f64>) -> Vec<Vec<f6
 
 fn rmsprop(
     network: Vec<impl Layer>,
-    data: &[Vec<f64>],
-    labels: &[Vec<f64>],
-    averages: (&[Vec<Vec<f64>>], &[Vec<f64>]),
-    learning_rate: f64,
+    data: &[Vec<f32>],
+    labels: &[Vec<f32>],
+    averages: (&[Vec<Vec<f32>>], &[Vec<f32>]),
+    learning_rate: f32,
 ) -> (
-    Vec<Vec<Vec<f64>>>,
-    Vec<Vec<f64>>,
-    Vec<Vec<Vec<f64>>>,
-    Vec<Vec<f64>>,
+    Vec<Vec<Vec<f32>>>,
+    Vec<Vec<f32>>,
+    Vec<Vec<Vec<f32>>>,
+    Vec<Vec<f32>>,
 ) {
     let sgd_results = SGD(network, data, labels);
-    let square_grad: Vec<Vec<Vec<f64>>> = sgd_results
+    let square_grad: Vec<Vec<Vec<f32>>> = sgd_results
         .0
         .iter()
         .map(|x| {
@@ -124,13 +124,13 @@ fn rmsprop(
                 .collect()
         })
         .collect();
-    let square_bias: Vec<Vec<f64>> = sgd_results
+    let square_bias: Vec<Vec<f32>> = sgd_results
         .1
         .iter()
         .map(|x| x.iter().map(|y| 0.1 * y * y).collect())
         .collect();
 
-    let new_grad_average: Vec<Vec<Vec<f64>>> = averages
+    let new_grad_average: Vec<Vec<Vec<f32>>> = averages
         .0
         .iter()
         .enumerate()
@@ -153,7 +153,7 @@ fn rmsprop(
             .collect(),
         square_bias,
     );
-    let  grad = sgd_results
+    let grad = sgd_results
         .0
         .iter()
         .enumerate()

@@ -15,7 +15,7 @@ impl Layer for CNNLayer {
         self.filters[0].cap
     }
 
-    fn forward(&self, input: &[f64]) -> Vec<f64> {
+    fn forward(&self, input: &[f32]) -> Vec<f32> {
         let inputs = stack(input, (self.num_in, input.len() / self.num_in));
         let mut outputs = Vec::new();
         for input_piece in inputs {
@@ -26,7 +26,7 @@ impl Layer for CNNLayer {
         unstack(&outputs)
     }
 
-    fn back(&self, input: &[f64], error: &[f64]) -> (Vec<Vec<f64>>, Vec<f64>, Vec<f64>) {
+    fn back(&self, input: &[f32], error: &[f32]) -> (Vec<Vec<f32>>, Vec<f32>, Vec<f32>) {
         let inputs = stack(input, (self.num_in, input.len() / self.num_in));
         let num_out = self.num_in * self.filters.len();
         let errors = stack(error, (num_out, error.len() / num_out));
@@ -58,7 +58,7 @@ impl Layer for CNNLayer {
                         .iter()
                         .map(|x| x[i])
                         .fold(0.0, |acc, x| acc + x)
-                        / error_piece_contributors.len() as f64,
+                        / error_piece_contributors.len() as f32,
                 );
             }
             new_error.push(error_piece);
@@ -70,7 +70,7 @@ impl Layer for CNNLayer {
             let mut filter_average = Vec::new();
             for i in 0..current[0].len() {
                 filter_average.push(
-                    current.iter().map(|x| x[i]).fold(0.0, |acc, x| acc + x) / current.len() as f64,
+                    current.iter().map(|x| x[i]).fold(0.0, |acc, x| acc + x) / current.len() as f32,
                 );
             }
             filter_result.push(filter_average);

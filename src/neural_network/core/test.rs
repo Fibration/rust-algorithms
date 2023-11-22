@@ -12,7 +12,7 @@ mod test_core {
 
     #[test]
     fn test_unstack() {
-        let matrix: Vec<Vec<f64>> = Vec::from([vec![1.0, 1.0], vec![1.0, 1.0]]);
+        let matrix: Vec<Vec<f32>> = Vec::from([vec![1.0, 1.0], vec![1.0, 1.0]]);
         assert_eq!(unstack(&matrix), [1.0, 1.0, 1.0, 1.0]);
     }
 }
