@@ -2,6 +2,9 @@ use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
+use crate::neural_network::core::Layer;
+use crate::neural_network::linear::linear::NeuralNetworkLayer;
+
 #[test]
 fn test_bandit() {
     let mut history = vec![0.0, 0.0, 0.0, 0.0];
@@ -40,4 +43,27 @@ fn bandit(
         let best = book.iter().map(|x| *x).reduce(f32::max).unwrap();
         (book.iter().position(|x| *x == best).unwrap(), book)
     }
+}
+
+fn contextual_bandit(
+    context: Vec<f32>,
+    network: Vec<NeuralNetworkLayer>,
+) -> (usize, Vec<NeuralNetworkLayer>) {
+    let nn = network.clone();
+    assert_eq!(network[0].dim_in as usize, context.len());
+    let mut input = context;
+    for layer in nn.iter() {
+        input = layer.forward(&input);
+    }
+    let output = input.iter().map(|x| *x).reduce(f32::max).unwrap();
+    (input.iter().position(|x| *x == output).unwrap(), nn)
+}
+
+// TODO: update the bandit from training data
+fn contextual_bandit_update(
+    data: Vec<(Vec<f32>, usize, f32)>,
+    network: Vec<NeuralNetworkLayer>,
+) -> Vec<NeuralNetworkLayer> {
+    let mut nn = network;
+    nn
 }
