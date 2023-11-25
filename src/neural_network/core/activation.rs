@@ -1,11 +1,29 @@
 use super::{linear_transform, outer};
 
+trait Layer {
+    fn dim_in(&self) -> usize;
+    fn dim_out(&self) -> usize;
+    fn forward(&self, input: &[f32]) -> Vec<f32>;
+    fn backward(
+        &self,
+        input: &[f32],
+        error: &[f32],
+    ) -> (Vec<f32>, Option<Vec<Vec<f32>>>, Option<Vec<f32>>);
+}
+
 struct ReLU {
     dim_in: usize,
     dim_out: usize,
 }
 
-impl ReLU {
+impl Layer for ReLU {
+    fn dim_in(&self) -> usize {
+        self.dim_in
+    }
+    fn dim_out(&self) -> usize {
+        self.dim_out
+    }
+
     fn forward(&self, input: &[f32]) -> Vec<f32> {
         assert_eq!(input.len(), self.dim_in);
         input
@@ -34,7 +52,14 @@ struct Linear {
     weights: Vec<Vec<f32>>,
 }
 
-impl Linear {
+impl Layer for Linear {
+    fn dim_in(&self) -> usize {
+        self.dim_in
+    }
+    fn dim_out(&self) -> usize {
+        self.dim_out
+    }
+
     fn forward(&self, input: &[f32]) -> Vec<f32> {
         linear_transform(&self.weights, input, None)
     }

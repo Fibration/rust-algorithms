@@ -17,3 +17,18 @@ pub trait Layer: Clone {
     fn forward(&self, input: &[f32]) -> Vec<f32>;
     fn back(&self, output: &[f32], error: &[f32]) -> (Vec<Vec<f32>>, Vec<f32>, Vec<f32>);
 }
+
+pub trait Layer2D: Clone {
+    fn dim_in(&self) -> (usize, usize, usize);
+    fn dim_out(&self) -> (usize, usize, usize);
+    fn forward(&self, input: &[Vec<Vec<f32>>]) -> Vec<Vec<Vec<f32>>>;
+    fn back(
+        &self,
+        input: &[Vec<Vec<f32>>],
+        error: &[Vec<Vec<f32>>],
+    ) -> (
+        Vec<Vec<Vec<f32>>>,
+        Option<Vec<Vec<Vec<f32>>>>,
+        Option<Vec<f32>>,
+    );
+}
