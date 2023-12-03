@@ -25,7 +25,7 @@ impl Layer2D for Conv2D {
                 input
                     .iter()
                     .map(|piece| convolution(piece, filter, self.padding, self.stride))
-                    .reduce(|acc, x| matrix_sum(&acc, &x))
+                    .reduce(|acc, x| matrix_op(&acc, &x, |y, z| y + z))
                     .unwrap()
             })
             .collect()
@@ -40,7 +40,6 @@ impl Layer2D for Conv2D {
         Option<Vec<f32>>,
     ) {
         // TODO adjust error
-        // TODO rotate filter in error_by_input
         // TODO pad for full convolution in filter_error
         let error_by_input = input
             .iter()
@@ -62,7 +61,7 @@ impl Layer2D for Conv2D {
                     })
                     .zip(self.filters.iter())
                     .map(|(error_channel, filter)| {
-                        convolution(&error_channel, filter, (0, 0), (1, 1))
+                        convolution(&error_channel, &matrix_rotate(filter), (0, 0), (1, 1))
                     })
                     .reduce(|acc, err| matrix_op(&acc, &err, |x, y| x + y))
                     .unwrap()
@@ -97,16 +96,23 @@ impl Layer2D for Conv2D {
     }
 }
 
-fn matrix_sum(a: &[Vec<f32>], b: &[Vec<f32>]) -> Vec<Vec<f32>> {
-    a.iter()
-        .zip(b.iter())
-        .map(|(x, y)| x.iter().zip(y.iter()).map(|(j, k)| j + k).collect())
-        .collect()
-}
-
 fn matrix_op(a: &[Vec<f32>], b: &[Vec<f32>], func: fn(&f32, &f32) -> f32) -> Vec<Vec<f32>> {
     a.iter()
         .zip(b.iter())
         .map(|(x, y)| x.iter().zip(y.iter()).map(|(j, k)| func(j, k)).collect())
+        .collect()
+}
+
+#[test]
+fn test_matrix_rotate() {
+    let x = vec![vec![1.0, 2.0], vec![3.0, 4.0]];
+    let x_rotated = vec![vec![4.0, 3.0], vec![2.0, 1.0]];
+    assert_eq!(matrix_rotate(&x), x_rotated)
+}
+
+fn matrix_rotate(x: &[Vec<f32>]) -> Vec<Vec<f32>> {
+    x.iter()
+        .map(|y| y.iter().rev().map(|z| *z).collect())
+        .rev()
         .collect()
 }
