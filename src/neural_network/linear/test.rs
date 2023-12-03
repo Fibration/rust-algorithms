@@ -1,6 +1,6 @@
 use crate::neural_network::{
-    core::Layer,
-    linear::linear::{linear_nn, NeuralNetworkLayer},
+    core::DEPRECATEDLayer,
+    linear::deprecated_linear::{linear_nn, NeuralNetworkLayer},
 };
 
 #[cfg(test)]

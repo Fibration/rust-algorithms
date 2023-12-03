@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::neural_network::core::{stack, unstack, Function, Layer};
+use crate::neural_network::core::{stack, unstack, DEPRECATEDLayer, Function};
 
 use super::ConvolutionLayer;
 
@@ -10,7 +10,7 @@ struct CNNLayer {
     filters: Vec<ConvolutionLayer>,
 }
 
-impl Layer for CNNLayer {
+impl DEPRECATEDLayer for CNNLayer {
     fn cap(&self) -> Function {
         self.filters[0].cap
     }

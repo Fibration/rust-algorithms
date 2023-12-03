@@ -1,7 +1,7 @@
-use super::core::{Layer, Loss};
+use super::core::{DEPRECATEDLayer, Loss};
 
 fn SGD(
-    network: Vec<impl Layer>,
+    network: Vec<impl DEPRECATEDLayer>,
     data: &[Vec<f32>],
     labels: &[Vec<f32>],
 ) -> (Vec<Vec<Vec<f32>>>, Vec<Vec<f32>>) {
@@ -103,7 +103,7 @@ fn divide(a: Vec<Vec<f32>>, b: Vec<Vec<f32>>, scalar: Option<f32>) -> Vec<Vec<f3
 }
 
 fn rmsprop(
-    network: Vec<impl Layer>,
+    network: Vec<impl DEPRECATEDLayer>,
     data: &[Vec<f32>],
     labels: &[Vec<f32>],
     averages: (&[Vec<Vec<f32>>], &[Vec<f32>]),

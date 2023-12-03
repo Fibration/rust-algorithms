@@ -1,6 +1,6 @@
 use rand_distr::{Distribution, Normal};
 
-use crate::neural_network::core::{stack, unstack, Activation, Function, Layer};
+use crate::neural_network::core::{stack, unstack, Activation, DEPRECATEDLayer, Function};
 
 use super::{convolution, pad_around, pad_right_within};
 
@@ -48,7 +48,7 @@ impl ConvolutionLayer {
     }
 }
 
-impl Layer for ConvolutionLayer {
+impl DEPRECATEDLayer for ConvolutionLayer {
     fn cap(&self) -> Function {
         self.cap
     }

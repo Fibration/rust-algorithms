@@ -4,7 +4,7 @@ mod test_conv {
         convolutional::{
             convolution, matrix_rotate, pad_around, pad_right_within, ConvolutionLayer,
         },
-        core::{stack, Function, Layer},
+        core::{stack, DEPRECATEDLayer, Function},
     };
 
     #[test]
