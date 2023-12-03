@@ -1,6 +1,6 @@
 use std::cmp;
 
-use super::core::{linear_transform, matmul};
+use super::core::{add, linear_transform, matmul};
 
 // ingredients for attention head
 // query vector embedding matrix

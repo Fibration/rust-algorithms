@@ -73,7 +73,7 @@ impl Layer for Linear {
         (
             weight_error
                 .iter()
-                .map(|x| *x)
+                .map(|x| x.clone())
                 .reduce(|acc, x| acc.iter().zip(x.iter()).map(|(i, j)| i + j).collect())
                 .unwrap(),
             Some(weight_error),

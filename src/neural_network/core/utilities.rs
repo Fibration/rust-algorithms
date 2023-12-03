@@ -77,7 +77,7 @@ pub fn linear_transform(a: &[Vec<f32>], x: &[f32], b: Option<&[f32]>) -> Vec<f32
         .collect()
 }
 
-fn add(a: &[f32], b: &[f32]) -> Vec<f32> {
+pub fn add(a: &[f32], b: &[f32]) -> Vec<f32> {
     a.iter().zip(b.iter()).map(|(x, y)| x + y).collect()
 }
 
