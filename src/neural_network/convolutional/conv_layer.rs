@@ -48,7 +48,7 @@ impl ConvolutionLayer {
     }
 }
 
-pub fn pad_right_within(matrix: Vec<Vec<f32>>, padding: (usize, usize)) -> Vec<Vec<f32>> {
+pub fn pad_right_within(matrix: &[Vec<f32>], padding: (usize, usize)) -> Vec<Vec<f32>> {
     let new_row_len = matrix[0].len() * (1 + padding.1);
     let mut empty = Vec::new();
     for _ in 0..(new_row_len) {
@@ -137,7 +137,7 @@ impl Layer for ConvolutionLayer {
         let input_matrix = stack(input, self.dim_in);
         let mut error_matrix = stack(error, self.dim_out);
         if self.stride.0 > 1 || self.stride.1 > 1 {
-            error_matrix = pad_right_within(error_matrix, (self.stride.0 - 1, self.stride.1 - 1));
+            error_matrix = pad_right_within(&error_matrix, (self.stride.0 - 1, self.stride.1 - 1));
         }
         let partial = convolution(&input_matrix, &error_matrix, self.padding, (1, 1));
         let delta_bias =

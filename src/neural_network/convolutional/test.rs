@@ -15,7 +15,7 @@ mod test_conv {
         expected.push(vec![0.0, 0.0, 0.0, 0.0]);
         expected.push(vec![1.0, 0.0, 1.0, 0.0]);
         expected.push(vec![0.0, 0.0, 0.0, 0.0]);
-        assert_eq!(pad_right_within(matrix, (1, 1)), expected);
+        assert_eq!(pad_right_within(&matrix, (1, 1)), expected);
     }
 
     #[test]

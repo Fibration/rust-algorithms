@@ -1,6 +1,6 @@
 use crate::neural_network::core::Layer2D;
 
-use super::{convolution, pad_around};
+use super::{convolution, pad_around, pad_right_within};
 
 #[derive(Clone)]
 struct Conv2D {
@@ -39,7 +39,11 @@ impl Layer2D for Conv2D {
         Option<Vec<Vec<Vec<f32>>>>,
         Option<Vec<f32>>,
     ) {
-        // TODO adjust error
+        let adjusted_error: Vec<Vec<Vec<f32>>> = error
+            .iter()
+            .map(|x| pad_right_within(&x, (self.stride.0 - 1, self.stride.1 - 1)))
+            .collect();
+
         let error_by_input = input
             .iter()
             .map(|i| {
@@ -50,7 +54,7 @@ impl Layer2D for Conv2D {
                     // then taking the entrywise product with the relevant error;
                     // this is then convolved with the filter to get the input_error
                     // then summed entrywise for that input
-                    .zip(error.iter())
+                    .zip(adjusted_error.iter())
                     .map(|(filter, filter_error)| {
                         matrix_op(
                             &convolution(i, filter, self.padding, self.stride),
@@ -79,7 +83,7 @@ impl Layer2D for Conv2D {
         let filter_error = self
             .filters
             .iter()
-            .zip(error.iter())
+            .zip(adjusted_error.iter())
             .map(|(filter, filter_error)| {
                 input
                     .iter()
