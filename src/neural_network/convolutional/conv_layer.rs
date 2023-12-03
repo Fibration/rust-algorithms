@@ -2,7 +2,7 @@ use rand_distr::{Distribution, Normal};
 
 use crate::neural_network::core::{stack, unstack, Activation, Function, Layer};
 
-use super::convolution;
+use super::{convolution, pad_around, pad_right_within};
 
 #[derive(Clone)]
 pub struct ConvolutionLayer {
@@ -46,78 +46,6 @@ impl ConvolutionLayer {
             cap,
         }
     }
-}
-
-pub fn pad_right_within(matrix: &[Vec<f32>], padding: (usize, usize)) -> Vec<Vec<f32>> {
-    let new_row_len = matrix[0].len() * (1 + padding.1);
-    let mut empty = Vec::new();
-    for _ in 0..(new_row_len) {
-        empty.push(0.0);
-    }
-    let mut padded = Vec::new();
-    for i in 0..matrix.len() {
-        let mut padded_row = Vec::new();
-        for j in 0..matrix[0].len() {
-            padded_row.push(matrix[i][j]);
-            for _ in 0..padding.1 {
-                padded_row.push(0.0);
-            }
-        }
-        padded.push(padded_row);
-        for _ in 0..padding.0 {
-            padded.push(empty.clone());
-        }
-    }
-    padded
-}
-
-pub fn pad_around(
-    matrix: Vec<Vec<f32>>,
-    padding: (usize, usize),
-    dilation: (usize, usize),
-) -> Vec<Vec<f32>> {
-    let new_row_len = padding.1 * 2 + matrix[0].len() + (matrix[0].len() - 1) * dilation.1;
-    let mut empty = Vec::new();
-    for _ in 0..(new_row_len) {
-        empty.push(0.0);
-    }
-    let mut padded = Vec::new();
-    for _ in 0..padding.0 {
-        padded.push(empty.clone());
-    }
-    for i in 0..matrix.len() {
-        let mut padded_row = Vec::new();
-        // pad the left
-        for _ in 0..padding.1 {
-            padded_row.push(0.0);
-        }
-        for j in 0..(matrix[0].len() - 1) {
-            // add column and then dilation
-            padded_row.push(matrix[i][j]);
-            for _ in 0..dilation.1 {
-                padded_row.push(0.0);
-            }
-        }
-        // add final column entry
-        padded_row.push(matrix[i][matrix[0].len() - 1]);
-        // pad the right
-        for _ in 0..padding.1 {
-            padded_row.push(0.0);
-        }
-        padded.push(padded_row);
-        // dilate next row unless last row
-        if i < matrix.len() - 1 {
-            for _ in 0..dilation.0 {
-                padded.push(empty.clone());
-            }
-        }
-    }
-
-    for _ in 0..padding.0 {
-        padded.push(empty.clone());
-    }
-
-    padded
 }
 
 impl Layer for ConvolutionLayer {

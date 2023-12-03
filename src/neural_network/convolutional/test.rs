@@ -1,7 +1,9 @@
 #[cfg(test)]
 mod test_conv {
     use crate::neural_network::{
-        convolutional::{convolution, pad_around, pad_right_within, ConvolutionLayer},
+        convolutional::{
+            convolution, matrix_rotate, pad_around, pad_right_within, ConvolutionLayer,
+        },
         core::{stack, Function, Layer},
     };
 
@@ -79,5 +81,12 @@ mod test_conv {
         assert_eq!(output[0], [1.0, 4.0, 1.0]);
         assert_eq!(output[1], [3.0, 10.0, 3.0]);
         assert_eq!(output[2], [1.0, 4.0, 1.0]);
+    }
+
+    #[test]
+    fn test_matrix_rotate() {
+        let x = vec![vec![1.0, 2.0], vec![3.0, 4.0]];
+        let x_rotated = vec![vec![4.0, 3.0], vec![2.0, 1.0]];
+        assert_eq!(matrix_rotate(&x), x_rotated)
     }
 }

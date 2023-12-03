@@ -1,6 +1,6 @@
 use crate::neural_network::core::Layer2D;
 
-use super::{convolution, pad_around, pad_right_within};
+use super::{convolution, matrix_op, matrix_rotate, pad_around, pad_right_within};
 
 #[derive(Clone)]
 struct Conv2D {
@@ -106,25 +106,4 @@ impl Layer2D for Conv2D {
 
         (error_by_input, Some(filter_error), None)
     }
-}
-
-fn matrix_op(a: &[Vec<f32>], b: &[Vec<f32>], func: fn(&f32, &f32) -> f32) -> Vec<Vec<f32>> {
-    a.iter()
-        .zip(b.iter())
-        .map(|(x, y)| x.iter().zip(y.iter()).map(|(j, k)| func(j, k)).collect())
-        .collect()
-}
-
-#[test]
-fn test_matrix_rotate() {
-    let x = vec![vec![1.0, 2.0], vec![3.0, 4.0]];
-    let x_rotated = vec![vec![4.0, 3.0], vec![2.0, 1.0]];
-    assert_eq!(matrix_rotate(&x), x_rotated)
-}
-
-fn matrix_rotate(x: &[Vec<f32>]) -> Vec<Vec<f32>> {
-    x.iter()
-        .map(|y| y.iter().rev().map(|z| *z).collect())
-        .rev()
-        .collect()
 }
