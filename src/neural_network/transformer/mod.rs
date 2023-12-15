@@ -96,6 +96,11 @@ fn multiply_back(
     error: &[Vec<f32>],
 ) -> (Vec<Vec<f32>>, Vec<Vec<f32>>, Vec<Vec<f32>>) {
     // left: i * j, right: j*k, error: i*k
+    // left error: i*k*(k*j) = i*j
+    // right error: (j*i) * i*k = j*k
+    // input_error: (k*i) * (i*k) = k*k
+    // typically k is the length of the token sequence, j is the internal model dim and i is the output dim
+    // incoming previous attention dim will be k*l so the error is k*k... needs conversion to k*l somewhere?
     let left_error = matmul(error, right, None, true);
     let left_t: Vec<Vec<f32>> = right
         .iter()
@@ -103,6 +108,11 @@ fn multiply_back(
         .map(|(j, _)| left.iter().map(|x| x[j]).collect())
         .collect();
     let right_error = matmul(&left_t, error, None, false);
-    let input_error = matmul(error, &multiply_forward(left, right), None, true);
+    let error_t: Vec<Vec<f32>> = error[0]
+        .iter()
+        .enumerate()
+        .map(|(k, _)| error.iter().map(|x| x[k]).collect())
+        .collect();
+    let input_error = matmul(&error_t, &multiply_forward(left, right), None, false);
     (input_error, left_error, right_error)
 }
