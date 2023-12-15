@@ -1,6 +1,6 @@
 use std::cmp;
 
-use super::core::{add, linear_transform, matmul};
+use super::core::{add, linear_transform, matmul, Layer};
 
 // ingredients for attention head
 // query vector embedding matrix
@@ -84,4 +84,25 @@ fn multi_attention(
         concat.push(row);
     }
     matmul(&concat, projection, None, false)
+}
+
+fn multiply_forward(left: &[Vec<f32>], right: &[Vec<f32>]) -> Vec<Vec<f32>> {
+    matmul(left, right, None, false)
+}
+
+fn multiply_back(
+    left: &[Vec<f32>],
+    right: &[Vec<f32>],
+    error: &[Vec<f32>],
+) -> (Vec<Vec<f32>>, Vec<Vec<f32>>, Vec<Vec<f32>>) {
+    // left: i * j, right: j*k, error: i*k
+    let left_error = matmul(error, right, None, true);
+    let left_t: Vec<Vec<f32>> = right
+        .iter()
+        .enumerate()
+        .map(|(j, _)| left.iter().map(|x| x[j]).collect())
+        .collect();
+    let right_error = matmul(&left_t, error, None, false);
+    let input_error = matmul(error, &multiply_forward(left, right), None, true);
+    (input_error, left_error, right_error)
 }
